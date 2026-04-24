@@ -13,13 +13,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.trackerinmobile.R
+import com.example.trackerinmobile.core.LocalBackStack
+import com.example.trackerinmobile.core.Routes
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(onNavigateToLogin: () -> Unit) {
+fun SplashScreen() {
+    val backStack = LocalBackStack.current
+
     LaunchedEffect(key1 = true) {
         delay(1000L) // Tunggu 1 detik
-        onNavigateToLogin()
+        backStack.clear()
+        backStack.add(Routes.LoginRoute)
     }
 
     Box(
@@ -36,4 +41,3 @@ fun SplashScreen(onNavigateToLogin: () -> Unit) {
         )
     }
 }
-

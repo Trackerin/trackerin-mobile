@@ -42,6 +42,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trackerinmobile.R
+import com.example.trackerinmobile.core.LocalBackStack
+import com.example.trackerinmobile.core.Routes
 import com.example.trackerinmobile.ui.theme.BackgroundApp
 import com.example.trackerinmobile.ui.theme.Black
 import com.example.trackerinmobile.ui.theme.ComponentGray
@@ -51,10 +53,9 @@ import com.example.trackerinmobile.ui.theme.WhitePure
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
-    onNavigateToRegister: () -> Unit = {},
-    onNavigateToDashboard: () -> Unit = {}
-) {
+fun LoginScreen() {
+    val backStack = LocalBackStack.current
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -158,7 +159,10 @@ fun LoginScreen(
 
         // Sign In Button
         Button(
-            onClick = { onNavigateToDashboard() },
+            onClick = {
+                backStack.clear()
+                backStack.add(Routes.DashboardRoute)
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
@@ -225,7 +229,7 @@ fun LoginScreen(
                 fontSize = 14.sp,
                 color = PrimaryBlue,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.clickable { onNavigateToRegister() }
+                modifier = Modifier.clickable { backStack.add(Routes.RegisterRoute) }
             )
         }
 

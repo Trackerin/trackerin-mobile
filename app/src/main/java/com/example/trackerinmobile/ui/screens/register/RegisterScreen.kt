@@ -41,6 +41,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trackerinmobile.R
+import com.example.trackerinmobile.core.LocalBackStack
+import com.example.trackerinmobile.core.Routes
 import com.example.trackerinmobile.ui.theme.Black
 import com.example.trackerinmobile.ui.theme.BlackishBlue
 import com.example.trackerinmobile.ui.theme.ComponentGray
@@ -49,7 +51,9 @@ import com.example.trackerinmobile.ui.theme.WhitePure
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(onNavigateToLogin: () -> Unit = {}) {
+fun RegisterScreen() {
+    val backStack = LocalBackStack.current
+
     var fullName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var dob by remember { mutableStateOf("") }
@@ -210,7 +214,7 @@ fun RegisterScreen(onNavigateToLogin: () -> Unit = {}) {
                 fontSize = 14.sp,
                 color = PrimaryBlue,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.clickable { onNavigateToLogin() }
+                modifier = Modifier.clickable { backStack.removeLastOrNull() }
             )
         }
 
@@ -244,4 +248,3 @@ fun CustomTextField(
     }
     Spacer(modifier = Modifier.height(16.dp))
 }
-

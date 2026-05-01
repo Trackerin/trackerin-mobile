@@ -2,6 +2,7 @@ package com.example.trackerinmobile.ui.screens.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -16,14 +17,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trackerinmobile.R
+import com.example.trackerinmobile.core.Todo
+import com.example.trackerinmobile.core.TodoViewModel
 import com.example.trackerinmobile.ui.theme.*
 
 @Composable
-fun DashboardScreen() {
+fun DashboardScreen(viewModel: TodoViewModel = viewModel()) {
     val scrollState = rememberScrollState()
+    val todos by viewModel.todos.collectAsState()
+    var showTodoDialog by remember { mutableStateOf(false) }
+    var editingTodoId by remember { mutableStateOf<String?>(null) }
+    var todoInputValue by remember { mutableStateOf("") }
 
     Scaffold(
         bottomBar = { CustomBottomNavigation() },
@@ -43,7 +52,20 @@ fun DashboardScreen() {
             Spacer(modifier = Modifier.height(20.dp))
             ActiveCourseWidget()
             Spacer(modifier = Modifier.height(16.dp))
-            TasksWidget()
+            TasksWidget(
+                todos = todos,
+                onAddClick = {
+                    editingTodoId = null
+                    todoInputValue = ""
+                    showTodoDialog = true
+                },
+                onToggleComplete = { id -> viewModel.toggleTodoCompleted(id) },
+                onTaskClick = { todo ->
+                    editingTodoId = todo.id
+                    todoInputValue = todo.title
+                    showTodoDialog = true
+                }
+            )
             Spacer(modifier = Modifier.height(16.dp))
             ActionButtonsRow()
             Spacer(modifier = Modifier.height(16.dp))
@@ -53,6 +75,51 @@ fun DashboardScreen() {
             Spacer(modifier = Modifier.height(16.dp))
             WeeklyProgressChartWidget()
             Spacer(modifier = Modifier.height(32.dp))
+        }
+
+        if (showTodoDialog) {
+            AlertDialog(
+                onDismissRequest = { showTodoDialog = false },
+                title = { Text(if (editingTodoId == null) "Add Task" else "Edit Task") },
+                text = {
+                    OutlinedTextField(
+                        value = todoInputValue,
+                        onValueChange = { todoInputValue = it },
+                        singleLine = true,
+                        label = { Text("Task Describe") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        if (todoInputValue.isNotBlank()) {
+                            if (editingTodoId == null) {
+                                viewModel.addTodo(todoInputValue)
+                            } else {
+                                viewModel.updateTodo(editingTodoId!!, todoInputValue)
+                            }
+                        }
+                        showTodoDialog = false
+                    }) {
+                        Text("Save")
+                    }
+                },
+                dismissButton = {
+                    Row {
+                        if (editingTodoId != null) {
+                            TextButton(onClick = {
+                                viewModel.deleteTodo(editingTodoId!!)
+                                showTodoDialog = false
+                            }) {
+                                Text("Delete", color = Color.Red)
+                            }
+                        }
+                        TextButton(onClick = { showTodoDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                }
+            )
         }
     }
 }
@@ -205,7 +272,12 @@ fun ActiveCourseWidget() {
 }
 
 @Composable
-fun TasksWidget() {
+fun TasksWidget(
+    todos: List<Todo>,
+    onAddClick: () -> Unit,
+    onToggleComplete: (String) -> Unit,
+    onTaskClick: (Todo) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -213,39 +285,65 @@ fun TasksWidget() {
             .background(WhitePure, RoundedCornerShape(16.dp))
             .padding(20.dp)
     ) {
-        Text(
-            text = "Tasks to do",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Black
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Tasks to do",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Black
+            )
+            Text(
+                text = "+ Add",
+                color = PrimaryBlue,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { onAddClick() }.padding(4.dp)
+            )
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
-        TaskItem("Do your homework")
-        TaskItem("Finish UI Project")
-        TaskItem("Review Computer Networks Task")
+        todos.forEach { todo ->
+            TaskItem(
+                todo = todo,
+                onToggleComplete = { onToggleComplete(todo.id) },
+                onClick = { onTaskClick(todo) }
+            )
+        }
     }
 }
 
 @Composable
-fun TaskItem(taskText: String) {
+fun TaskItem(todo: Todo, onToggleComplete: () -> Unit, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 6.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
     ) {
-        // Using a custom circle since there's no check circle in provided drawables
         Box(
             modifier = Modifier
-                .size(16.dp)
+                .size(20.dp)
+                .clip(CircleShape)
                 .border(2.dp, PrimaryBlue, CircleShape)
-                .padding(2.dp)
-                .background(PrimaryBlue, CircleShape)
-        )
+                .background(if (todo.isCompleted) PrimaryBlue else Color.Transparent)
+                .clickable { onToggleComplete() },
+            contentAlignment = Alignment.Center
+        ) {
+            if (todo.isCompleted) {
+                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(WhitePure))
+            }
+        }
         Spacer(modifier = Modifier.width(12.dp))
         Text(
-            text = taskText,
+            text = todo.title,
             fontSize = 14.sp,
-            color = Black
+            color = if (todo.isCompleted) TextGray else Black,
+            textDecoration = if (todo.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+            modifier = Modifier.weight(1f).clickable { onClick() }
         )
     }
 }

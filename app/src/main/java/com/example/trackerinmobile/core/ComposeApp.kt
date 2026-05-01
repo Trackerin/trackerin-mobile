@@ -12,6 +12,7 @@ import com.example.trackerinmobile.ui.screens.splash.SplashScreen
 import com.example.trackerinmobile.ui.screens.login.LoginScreen
 import com.example.trackerinmobile.ui.screens.register.RegisterScreen
 import com.example.trackerinmobile.ui.screens.dashboard.DashboardScreen
+import com.example.trackerinmobile.ui.screens.progress.ProgressScreen
 
 @Composable
 fun ComposeApp() {
@@ -30,9 +31,9 @@ fun ComposeApp() {
                     entry<Routes.LoginRoute> { LoginScreen() }
                     entry<Routes.RegisterRoute> { RegisterScreen() }
                     entry<Routes.DashboardRoute> { DashboardScreen() }
+                    entry<Routes.ProgressRoute> { ProgressScreen() }
                 }
             )
         }
     }
 }
-

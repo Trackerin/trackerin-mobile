@@ -16,5 +16,7 @@ object Routes {
 
     @Serializable
     data object DashboardRoute : NavKey
-}
 
+    @Serializable
+    data object ProgressRoute : NavKey
+}

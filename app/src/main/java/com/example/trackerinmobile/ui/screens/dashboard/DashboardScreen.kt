@@ -22,8 +22,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trackerinmobile.R
+import com.example.trackerinmobile.core.LocalBackStack
+import com.example.trackerinmobile.core.Routes
 import com.example.trackerinmobile.core.Todo
 import com.example.trackerinmobile.core.TodoViewModel
+import com.example.trackerinmobile.ui.components.CustomBottomNavigation
 import com.example.trackerinmobile.ui.theme.*
 
 @Composable
@@ -33,9 +36,22 @@ fun DashboardScreen(viewModel: TodoViewModel = viewModel()) {
     var showTodoDialog by remember { mutableStateOf(false) }
     var editingTodoId by remember { mutableStateOf<String?>(null) }
     var todoInputValue by remember { mutableStateOf("") }
+    var todoInputDesc by remember { mutableStateOf("") }
+    var todoInputDue by remember { mutableStateOf("") }
+
+    val backStack = LocalBackStack.current
 
     Scaffold(
-        bottomBar = { CustomBottomNavigation() },
+        bottomBar = {
+            CustomBottomNavigation(
+                activeTab = 0,
+                onTabSelected = { index ->
+                    when (index) {
+                        2 -> backStack.add(Routes.ProgressRoute)
+                    }
+                }
+            )
+        },
         containerColor = BackgroundApp
     ) { paddingValues ->
         Column(
@@ -57,12 +73,16 @@ fun DashboardScreen(viewModel: TodoViewModel = viewModel()) {
                 onAddClick = {
                     editingTodoId = null
                     todoInputValue = ""
+                    todoInputDesc = ""
+                    todoInputDue = ""
                     showTodoDialog = true
                 },
                 onToggleComplete = { id -> viewModel.toggleTodoCompleted(id) },
                 onTaskClick = { todo ->
                     editingTodoId = todo.id
                     todoInputValue = todo.title
+                    todoInputDesc = todo.description
+                    todoInputDue = todo.dueDate
                     showTodoDialog = true
                 }
             )
@@ -82,21 +102,39 @@ fun DashboardScreen(viewModel: TodoViewModel = viewModel()) {
                 onDismissRequest = { showTodoDialog = false },
                 title = { Text(if (editingTodoId == null) "Add Task" else "Edit Task") },
                 text = {
-                    OutlinedTextField(
-                        value = todoInputValue,
-                        onValueChange = { todoInputValue = it },
-                        singleLine = true,
-                        label = { Text("Task Describe") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = todoInputValue,
+                            onValueChange = { todoInputValue = it },
+                            singleLine = true,
+                            label = { Text("Task Title") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = todoInputDesc,
+                            onValueChange = { todoInputDesc = it },
+                            singleLine = true,
+                            label = { Text("Description") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = todoInputDue,
+                            onValueChange = { todoInputDue = it },
+                            singleLine = true,
+                            label = { Text("Due Date (e.g. Deadline 6/7/2026)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 },
                 confirmButton = {
                     TextButton(onClick = {
                         if (todoInputValue.isNotBlank()) {
                             if (editingTodoId == null) {
-                                viewModel.addTodo(todoInputValue)
+                                viewModel.addTodo(todoInputValue, todoInputDesc, todoInputDue)
                             } else {
-                                viewModel.updateTodo(editingTodoId!!, todoInputValue)
+                                viewModel.updateTodo(editingTodoId!!, todoInputValue, todoInputDesc, todoInputDue)
                             }
                         }
                         showTodoDialog = false
@@ -350,6 +388,7 @@ fun TaskItem(todo: Todo, onToggleComplete: () -> Unit, onClick: () -> Unit) {
 
 @Composable
 fun ActionButtonsRow() {
+    val backStack = LocalBackStack.current
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Button(
             onClick = { /*TODO*/ },
@@ -363,7 +402,7 @@ fun ActionButtonsRow() {
         }
 
         OutlinedButton(
-            onClick = { /*TODO*/ },
+            onClick = { backStack.add(Routes.ProgressRoute) },
             modifier = Modifier
                 .weight(1f)
                 .height(60.dp),
@@ -541,47 +580,4 @@ fun ChartBar(day: String, height: Float, color: Color) {
     }
 }
 
-@Composable
-fun CustomBottomNavigation() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(32.dp))
-                .background(BlackishBlue)
-                .padding(vertical = 12.dp, horizontal = 24.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Home (Active)
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(PrimaryBlue),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(painter = painterResource(id = R.drawable.home_icon), contentDescription = "Home", tint = WhitePure, modifier = Modifier.size(24.dp))
-            }
 
-            // Search
-            IconButton(onClick = { /*TODO*/ }) {
-                Icon(painter = painterResource(id = R.drawable.search_icon), contentDescription = "Search", tint = WhitePure, modifier = Modifier.size(24.dp))
-            }
-
-            // Book/Curriculum
-            IconButton(onClick = { /*TODO*/ }) {
-                Icon(painter = painterResource(id = R.drawable.book_icon), contentDescription = "Curriculum", tint = WhitePure, modifier = Modifier.size(24.dp))
-            }
-
-            // Profile
-            IconButton(onClick = { /*TODO*/ }) {
-                Icon(painter = painterResource(id = R.drawable.profile_icon), contentDescription = "Profile", tint = WhitePure, modifier = Modifier.size(24.dp))
-            }
-        }
-    }
-}

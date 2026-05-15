@@ -36,11 +36,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import android.widget.Toast
+import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.example.trackerinmobile.TrackerinApplication
+import com.example.trackerinmobile.core.Constants
+import com.example.trackerinmobile.data.model.auth.LoginRequest
+import com.example.trackerinmobile.ui.screens.auth.AuthState
+import com.example.trackerinmobile.ui.screens.auth.AuthViewModel
+import com.example.trackerinmobile.ui.screens.auth.AuthViewModelFactory
+import androidx.compose.material3.CircularProgressIndicator
 import com.example.trackerinmobile.R
 import com.example.trackerinmobile.core.LocalBackStack
 import com.example.trackerinmobile.core.Routes
@@ -55,10 +76,35 @@ import com.example.trackerinmobile.ui.theme.WhitePure
 @Composable
 fun LoginScreen() {
     val backStack = LocalBackStack.current
+    val context = LocalContext.current
+    val appContainer = (context.applicationContext as TrackerinApplication).container
+    
+    val authViewModel: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory(appContainer.apiService, appContainer.tokenManager)
+    )
+    
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Success -> {
+                Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
+                authViewModel.resetState()
+                backStack.clear()
+                backStack.add(Routes.DashboardRoute)
+            }
+            is AuthState.Error -> {
+                Toast.makeText(context, (authState as AuthState.Error).message, Toast.LENGTH_LONG).show()
+                authViewModel.resetState()
+            }
+            else -> {}
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -106,6 +152,10 @@ fun LoginScreen() {
                 onValueChange = { email = it },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = ComponentGray,
                     focusedBorderColor = PrimaryBlue,
@@ -127,6 +177,10 @@ fun LoginScreen() {
                 onValueChange = { password = it },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     val image = if (passwordVisible) R.drawable.eye_open else R.drawable.eye_slash
@@ -160,16 +214,24 @@ fun LoginScreen() {
         // Sign In Button
         Button(
             onClick = {
-                backStack.clear()
-                backStack.add(Routes.DashboardRoute)
+                if (email.isNotBlank() && password.isNotBlank()) {
+                    authViewModel.login(LoginRequest(email, password))
+                } else {
+                    Toast.makeText(context, "Please enter email and password", Toast.LENGTH_SHORT).show()
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue, contentColor = WhitePure)
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue, contentColor = WhitePure),
+            enabled = authState !is AuthState.Loading
         ) {
-            Text(text = "Sign in", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            if (authState is AuthState.Loading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = WhitePure)
+            } else {
+                Text(text = "Sign in", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -192,13 +254,41 @@ fun LoginScreen() {
 
         // Sign In with Google Button
         Button(
-            onClick = { /* Handle google sign in */ },
+            onClick = {
+                coroutineScope.launch {
+                    try {
+                        val credentialManager = CredentialManager.create(context)
+                        val googleIdOption = GetGoogleIdOption.Builder()
+                            .setFilterByAuthorizedAccounts(false)
+                            .setServerClientId(Constants.GOOGLE_CLIENT_ID)
+                            .setAutoSelectEnabled(true)
+                            .build()
+                        
+                        val request = GetCredentialRequest.Builder()
+                            .addCredentialOption(googleIdOption)
+                            .build()
+                        
+                        val result = credentialManager.getCredential(context, request)
+                        val credential = result.credential
+                        
+                        if (credential is com.google.android.libraries.identity.googleid.GoogleIdTokenCredential) {
+                            authViewModel.googleLogin(credential.idToken)
+                        } else {
+                            Toast.makeText(context, "Unexpected credential type", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: GetCredentialException) {
+                        Log.e("AuthScreen", "Google Sign In Error", e)
+                        Toast.makeText(context, "Google Sign In Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
                 .border(1.dp, ComponentGray, RoundedCornerShape(12.dp)),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = WhitePure, contentColor = Black)
+            colors = ButtonDefaults.buttonColors(containerColor = WhitePure, contentColor = Black),
+            enabled = authState !is AuthState.Loading
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(

@@ -36,10 +36,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import android.widget.Toast
+import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.example.trackerinmobile.TrackerinApplication
+import com.example.trackerinmobile.core.Constants
+import com.example.trackerinmobile.data.model.auth.RegisterRequest
+import com.example.trackerinmobile.ui.screens.auth.AuthState
+import com.example.trackerinmobile.ui.screens.auth.AuthViewModel
+import com.example.trackerinmobile.ui.screens.auth.AuthViewModelFactory
+import androidx.compose.material3.CircularProgressIndicator
 import com.example.trackerinmobile.R
 import com.example.trackerinmobile.core.LocalBackStack
 import com.example.trackerinmobile.core.Routes
@@ -53,16 +74,40 @@ import com.example.trackerinmobile.ui.theme.WhitePure
 @Composable
 fun RegisterScreen() {
     val backStack = LocalBackStack.current
+    val context = LocalContext.current
+    val appContainer = (context.applicationContext as TrackerinApplication).container
+
+    val authViewModel: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory(appContainer.apiService, appContainer.tokenManager)
+    )
+
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
 
     var fullName by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var dob by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
+
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Success -> {
+                Toast.makeText(context, "Registration Successful", Toast.LENGTH_SHORT).show()
+                authViewModel.resetState()
+                backStack.clear()
+                backStack.add(Routes.DashboardRoute)
+            }
+            is AuthState.Error -> {
+                Toast.makeText(context, (authState as AuthState.Error).message, Toast.LENGTH_LONG).show()
+                authViewModel.resetState()
+            }
+            else -> {}
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -103,19 +148,26 @@ fun RegisterScreen() {
         Spacer(modifier = Modifier.height(40.dp))
 
         // Full Name field
-        CustomTextField(label = "Full Name", value = fullName, onValueChange = { fullName = it })
-
-        // Username field
-        CustomTextField(label = "Username", value = username, onValueChange = { username = it })
-
-        // Date of Birth field
-        CustomTextField(label = "Date of Birth", value = dob, onValueChange = { dob = it })
-
-        // Current Status field
-        CustomTextField(label = "Current Status (Student/General)", value = status, onValueChange = { status = it })
+        CustomTextField(
+            label = "Full Name",
+            value = fullName,
+            onValueChange = { fullName = it },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            )
+        )
 
         // Email field
-        CustomTextField(label = "Email", value = email, onValueChange = { email = it })
+        CustomTextField(
+            label = "Email",
+            value = email,
+            onValueChange = { email = it },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            )
+        )
 
         // Password field
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -126,6 +178,10 @@ fun RegisterScreen() {
                 onValueChange = { password = it },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Next
+                ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     val image = if (passwordVisible) R.drawable.eye_open else R.drawable.eye_slash
@@ -143,18 +199,72 @@ fun RegisterScreen() {
             )
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Confirm Password field
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(text = "Confirm Password", fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground)
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val image = if (confirmPasswordVisible) R.drawable.eye_open else R.drawable.eye_slash
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(painter = painterResource(id = image), contentDescription = "Toggle password visibility", modifier = Modifier.size(24.dp))
+                    }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = ComponentGray,
+                    focusedBorderColor = PrimaryBlue,
+                    unfocusedContainerColor = WhitePure,
+                    focusedContainerColor = WhitePure
+                ),
+                singleLine = true
+            )
+        }
+
         Spacer(modifier = Modifier.height(32.dp))
 
         // Sign Up Button
         Button(
-            onClick = { /* Handle sign up */ },
+            onClick = {
+                if (fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()) {
+                    if (password == confirmPassword) {
+                        authViewModel.register(
+                            RegisterRequest(
+                                name = fullName,
+                                email = email,
+                                password = password,
+                                passwordConfirmation = confirmPassword
+                            )
+                        )
+                    } else {
+                        Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(context, "Please fill required fields", Toast.LENGTH_SHORT).show()
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = BlackishBlue, contentColor = WhitePure)
+            colors = ButtonDefaults.buttonColors(containerColor = BlackishBlue, contentColor = WhitePure),
+            enabled = authState !is AuthState.Loading
         ) {
-            Text(text = "Sign Up", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            if (authState is AuthState.Loading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = WhitePure)
+            } else {
+                Text(text = "Sign Up", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -177,13 +287,41 @@ fun RegisterScreen() {
 
         // Sign Up with Google Button
         Button(
-            onClick = { /* Handle google sign up */ },
+            onClick = {
+                coroutineScope.launch {
+                    try {
+                        val credentialManager = CredentialManager.create(context)
+                        val googleIdOption = GetGoogleIdOption.Builder()
+                            .setFilterByAuthorizedAccounts(false)
+                            .setServerClientId(Constants.GOOGLE_CLIENT_ID)
+                            .setAutoSelectEnabled(true)
+                            .build()
+
+                        val request = GetCredentialRequest.Builder()
+                            .addCredentialOption(googleIdOption)
+                            .build()
+
+                        val result = credentialManager.getCredential(context, request)
+                        val credential = result.credential
+
+                        if (credential is com.google.android.libraries.identity.googleid.GoogleIdTokenCredential) {
+                            authViewModel.googleLogin(credential.idToken)
+                        } else {
+                            Toast.makeText(context, "Unexpected credential type", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: GetCredentialException) {
+                        Log.e("AuthScreen", "Google Sign Up Error", e)
+                        Toast.makeText(context, "Google Sign Up Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
                 .border(1.dp, ComponentGray, RoundedCornerShape(12.dp)),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = WhitePure, contentColor = Black)
+            colors = ButtonDefaults.buttonColors(containerColor = WhitePure, contentColor = Black),
+            enabled = authState !is AuthState.Loading
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
@@ -227,7 +365,8 @@ fun RegisterScreen() {
 fun CustomTextField(
     label: String,
     value: String,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
+    keyboardOptions: androidx.compose.foundation.text.KeyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(text = label, fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground)
@@ -237,6 +376,7 @@ fun CustomTextField(
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
+            keyboardOptions = keyboardOptions,
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedBorderColor = ComponentGray,
                 focusedBorderColor = PrimaryBlue,

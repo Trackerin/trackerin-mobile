@@ -18,17 +18,26 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trackerinmobile.R
+import com.example.trackerinmobile.TrackerinApplication
 import com.example.trackerinmobile.core.LocalBackStack
 import com.example.trackerinmobile.core.Routes
 import com.example.trackerinmobile.core.Todo
 import com.example.trackerinmobile.core.TodoViewModel
+import com.example.trackerinmobile.core.TodoViewModelFactory
 import com.example.trackerinmobile.ui.components.CustomBottomNavigation
 import com.example.trackerinmobile.ui.theme.*
 
 @Composable
-fun ProgressScreen(viewModel: TodoViewModel = viewModel()) {
+fun ProgressScreen() {
+    val context = LocalContext.current
+    val appContainer = (context.applicationContext as TrackerinApplication).container
+    val viewModel: TodoViewModel = viewModel(
+        factory = TodoViewModelFactory(appContainer.apiService)
+    )
+
     val todos by viewModel.todos.collectAsState()
     val backStack = LocalBackStack.current
 

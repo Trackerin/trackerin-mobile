@@ -56,6 +56,7 @@ fun DashboardScreen() {
                 activeTab = 0,
                 onTabSelected = { index ->
                     when (index) {
+                        1 -> backStack.add(Routes.ExploreRoute)
                         2 -> backStack.add(Routes.ProgressRoute)
                     }
                 }

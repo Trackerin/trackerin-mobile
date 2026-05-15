@@ -26,12 +26,21 @@ class TokenManager(context: Context) {
         return sharedPreferences.getString(KEY_TOKEN, null)
     }
 
+    fun saveUserName(name: String) {
+        sharedPreferences.edit().putString(KEY_USER_NAME, name).apply()
+    }
+
+    fun getUserName(): String? {
+        return sharedPreferences.getString(KEY_USER_NAME, null)
+    }
+
     fun clearToken() {
-        sharedPreferences.edit().remove(KEY_TOKEN).apply()
+        sharedPreferences.edit().remove(KEY_TOKEN).remove(KEY_USER_NAME).apply()
     }
 
     companion object {
         private const val KEY_TOKEN = "jwt_token"
+        private const val KEY_USER_NAME = "user_name"
     }
 }
 

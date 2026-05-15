@@ -45,6 +45,7 @@ fun ExploreScreen() {
                     when (index) {
                         0 -> backStack.add(Routes.DashboardRoute)
                         2 -> backStack.add(Routes.ProgressRoute)
+                        3 -> backStack.add(Routes.ProfileRoute)
                     }
                 }
             )

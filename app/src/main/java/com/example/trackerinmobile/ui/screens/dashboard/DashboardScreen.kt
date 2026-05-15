@@ -36,6 +36,8 @@ import com.example.trackerinmobile.ui.theme.*
 fun DashboardScreen() {
     val context = LocalContext.current
     val appContainer = (context.applicationContext as TrackerinApplication).container
+    val userName = remember { appContainer.tokenManager.getUserName()?.split(" ")?.firstOrNull() ?: "User" }
+    
     val viewModel: TodoViewModel = viewModel(
         factory = TodoViewModelFactory(appContainer.apiService)
     )
@@ -58,6 +60,7 @@ fun DashboardScreen() {
                     when (index) {
                         1 -> backStack.add(Routes.ExploreRoute)
                         2 -> backStack.add(Routes.ProgressRoute)
+                        3 -> backStack.add(Routes.ProfileRoute)
                     }
                 }
             )
@@ -72,7 +75,7 @@ fun DashboardScreen() {
                 .verticalScroll(scrollState)
         ) {
             Spacer(modifier = Modifier.height(24.dp))
-            DashboardHeader()
+            DashboardHeader(userName)
             Spacer(modifier = Modifier.height(20.dp))
             StreakWidget()
             Spacer(modifier = Modifier.height(20.dp))
@@ -173,7 +176,7 @@ fun DashboardScreen() {
 }
 
 @Composable
-fun DashboardHeader() {
+fun DashboardHeader(userName: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -188,13 +191,18 @@ fun DashboardHeader() {
                     .background(PrimaryBlue),
                 contentAlignment = Alignment.Center
             ) {
-                Text("V", color = WhitePure, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(
+                    text = userName.take(1).uppercase(),
+                    color = WhitePure,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Text(
-                text = "Hi, Vinneth!",
+                text = "Hi, $userName!",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Black

@@ -59,6 +59,7 @@ fun ProgressScreen() {
                     when (index) {
                         0 -> backStack.add(Routes.DashboardRoute)
                         1 -> backStack.add(Routes.ExploreRoute)
+                        3 -> backStack.add(Routes.ProfileRoute)
                     }
                 }
             )

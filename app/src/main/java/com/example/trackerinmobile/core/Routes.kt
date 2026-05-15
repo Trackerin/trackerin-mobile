@@ -21,5 +21,8 @@ object Routes {
     data object ExploreRoute : NavKey
 
     @Serializable
+    data object ProfileRoute : NavKey
+
+    @Serializable
     data object ProgressRoute : NavKey
 }

@@ -33,6 +33,7 @@ class AuthViewModel(
             try {
                 val response = apiService.login(request)
                 tokenManager.saveToken(response.accessToken)
+                tokenManager.saveUserName(response.data.name)
                 _authState.value = AuthState.Success
             } catch (e: Exception) {
                 _authState.value = AuthState.Error(e.message ?: "Login failed")
@@ -46,6 +47,7 @@ class AuthViewModel(
             try {
                 val response = apiService.register(request)
                 tokenManager.saveToken(response.accessToken)
+                tokenManager.saveUserName(response.data.name)
                 _authState.value = AuthState.Success
             } catch (e: Exception) {
                 _authState.value = AuthState.Error(e.message ?: "Registration failed")
@@ -59,9 +61,22 @@ class AuthViewModel(
             try {
                 val response = apiService.googleLogin(GoogleAuthRequest(idToken))
                 tokenManager.saveToken(response.accessToken)
+                tokenManager.saveUserName(response.data.name)
                 _authState.value = AuthState.Success
             } catch (e: Exception) {
                 _authState.value = AuthState.Error(e.message ?: "Google Login failed")
+            }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            try {
+                apiService.logout()
+            } catch (e: Exception) {
+                // Even if API fails, we clear local token
+            } finally {
+                tokenManager.clearToken()
             }
         }
     }

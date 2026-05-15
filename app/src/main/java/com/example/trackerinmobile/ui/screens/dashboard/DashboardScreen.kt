@@ -20,17 +20,26 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trackerinmobile.R
+import com.example.trackerinmobile.TrackerinApplication
 import com.example.trackerinmobile.core.LocalBackStack
 import com.example.trackerinmobile.core.Routes
 import com.example.trackerinmobile.core.Todo
 import com.example.trackerinmobile.core.TodoViewModel
+import com.example.trackerinmobile.core.TodoViewModelFactory
 import com.example.trackerinmobile.ui.components.CustomBottomNavigation
 import com.example.trackerinmobile.ui.theme.*
 
 @Composable
-fun DashboardScreen(viewModel: TodoViewModel = viewModel()) {
+fun DashboardScreen() {
+    val context = LocalContext.current
+    val appContainer = (context.applicationContext as TrackerinApplication).container
+    val viewModel: TodoViewModel = viewModel(
+        factory = TodoViewModelFactory(appContainer.apiService)
+    )
+
     val scrollState = rememberScrollState()
     val todos by viewModel.todos.collectAsState()
     var showTodoDialog by remember { mutableStateOf(false) }

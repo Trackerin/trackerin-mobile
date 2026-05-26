@@ -44,9 +44,12 @@ fun ProfileScreen() {
 
     // Profile Data State
     val savedName = remember { appContainer.tokenManager.getUserName() ?: "User" }
+    val savedOccupation = remember { appContainer.tokenManager.getOccupation() ?: "College Student, 4th Semester" }
+    val savedSpecialization = remember { appContainer.tokenManager.getSpecialization() ?: "Fullstack Developer" }
+    
     var name by remember { mutableStateOf(savedName) }
-    var occupation by remember { mutableStateOf("College Student, 4th Semester") }
-    var specialization by remember { mutableStateOf("Fullstack Developer") }
+    var occupation by remember { mutableStateOf(savedOccupation) }
+    var specialization by remember { mutableStateOf(savedSpecialization) }
     
     var showEditDialog by remember { mutableStateOf(false) }
 
@@ -250,7 +253,12 @@ fun ProfileScreen() {
                         name = tempName
                         occupation = tempOccupation
                         specialization = tempSpecialization
-                        appContainer.tokenManager.saveUserName(tempName) // Persist locally
+                        
+                        // Persist to Data Layer (SharedPreferences)
+                        appContainer.tokenManager.saveUserName(tempName)
+                        appContainer.tokenManager.saveOccupation(tempOccupation)
+                        appContainer.tokenManager.saveSpecialization(tempSpecialization)
+
                         showEditDialog = false
                     }) {
                         Text("Save")

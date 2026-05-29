@@ -16,36 +16,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.trackerinmobile.R
-import com.example.trackerinmobile.TrackerinApplication
 import com.example.trackerinmobile.core.LocalBackStack
 import com.example.trackerinmobile.core.Routes
 import com.example.trackerinmobile.ui.components.CustomBottomNavigation
 import com.example.trackerinmobile.ui.screens.auth.AuthViewModel
-import com.example.trackerinmobile.ui.screens.auth.AuthViewModelFactory
 import com.example.trackerinmobile.ui.theme.*
 
 @Composable
 fun ProfileScreen() {
-    val context = LocalContext.current
-    val appContainer = (context.applicationContext as TrackerinApplication).container
-    val authViewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(appContainer.apiService, appContainer.tokenManager)
-    )
+    val authViewModel: AuthViewModel = hiltViewModel()
     val backStack = LocalBackStack.current
     val scrollState = rememberScrollState()
 
     // Profile Data State
-    val savedName = remember { appContainer.tokenManager.getUserName() ?: "User" }
-    val savedOccupation = remember { appContainer.tokenManager.getOccupation() ?: "College Student, 4th Semester" }
-    val savedSpecialization = remember { appContainer.tokenManager.getSpecialization() ?: "Fullstack Developer" }
+    val savedName = remember { authViewModel.tokenManager.getUserName() ?: "User" }
+    val savedOccupation = remember { authViewModel.tokenManager.getOccupation() ?: "College Student, 4th Semester" }
+    val savedSpecialization = remember { authViewModel.tokenManager.getSpecialization() ?: "Fullstack Developer" }
     
     var name by remember { mutableStateOf(savedName) }
     var occupation by remember { mutableStateOf(savedOccupation) }
@@ -255,9 +248,9 @@ fun ProfileScreen() {
                         specialization = tempSpecialization
                         
                         // Persist to Data Layer (SharedPreferences)
-                        appContainer.tokenManager.saveUserName(tempName)
-                        appContainer.tokenManager.saveOccupation(tempOccupation)
-                        appContainer.tokenManager.saveSpecialization(tempSpecialization)
+                        authViewModel.tokenManager.saveUserName(tempName)
+                        authViewModel.tokenManager.saveOccupation(tempOccupation)
+                        authViewModel.tokenManager.saveSpecialization(tempSpecialization)
 
                         showEditDialog = false
                     }) {

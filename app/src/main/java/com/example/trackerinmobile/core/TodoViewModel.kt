@@ -1,6 +1,5 @@
 package com.example.trackerinmobile.core
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,6 +10,9 @@ import java.util.UUID
 import com.example.trackerinmobile.data.network.ApiService
 import com.example.trackerinmobile.data.model.progress.TodoRequest
 import com.example.trackerinmobile.data.model.progress.TodoApiModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+
 data class Todo(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
@@ -18,7 +20,9 @@ data class Todo(
     val dueDate: String = "",
     val isCompleted: Boolean = false
 )
-class TodoViewModel(private val apiService: ApiService) : ViewModel() {
+
+@HiltViewModel
+class TodoViewModel @Inject constructor(private val apiService: ApiService) : ViewModel() {
     private val _todos = MutableStateFlow<List<Todo>>(emptyList())
     val todos: StateFlow<List<Todo>> = _todos.asStateFlow()
     private val _curriculumProgress = MutableStateFlow(0)
@@ -138,16 +142,5 @@ class TodoViewModel(private val apiService: ApiService) : ViewModel() {
                 loadData()
             }
         }
-    }
-}
-class TodoViewModelFactory(
-    private val apiService: ApiService
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(TodoViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return TodoViewModel(apiService) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

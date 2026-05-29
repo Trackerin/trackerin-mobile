@@ -1,16 +1,17 @@
 package com.example.trackerinmobile.ui.screens.auth
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.trackerinmobile.data.local.TokenManager
 import com.example.trackerinmobile.data.model.auth.GoogleAuthRequest
 import com.example.trackerinmobile.data.model.auth.LoginRequest
 import com.example.trackerinmobile.data.model.auth.RegisterRequest
 import com.example.trackerinmobile.data.network.ApiService
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed class AuthState {
     object Idle : AuthState()
@@ -19,9 +20,10 @@ sealed class AuthState {
     data class Error(val message: String) : AuthState()
 }
 
-class AuthViewModel(
+@HiltViewModel
+class AuthViewModel @Inject constructor(
     private val apiService: ApiService,
-    private val tokenManager: TokenManager
+    val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
@@ -83,19 +85,6 @@ class AuthViewModel(
 
     fun resetState() {
         _authState.value = AuthState.Idle
-    }
-}
-
-class AuthViewModelFactory(
-    private val apiService: ApiService,
-    private val tokenManager: TokenManager
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return AuthViewModel(apiService, tokenManager) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 

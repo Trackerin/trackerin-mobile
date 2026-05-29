@@ -44,7 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
@@ -55,12 +55,10 @@ import android.util.Log
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
-import com.example.trackerinmobile.TrackerinApplication
 import com.example.trackerinmobile.core.Constants
 import com.example.trackerinmobile.data.model.auth.LoginRequest
 import com.example.trackerinmobile.ui.screens.auth.AuthState
 import com.example.trackerinmobile.ui.screens.auth.AuthViewModel
-import com.example.trackerinmobile.ui.screens.auth.AuthViewModelFactory
 import androidx.compose.material3.CircularProgressIndicator
 import com.example.trackerinmobile.R
 import com.example.trackerinmobile.core.LocalBackStack
@@ -77,11 +75,8 @@ import com.example.trackerinmobile.ui.theme.WhitePure
 fun LoginScreen() {
     val backStack = LocalBackStack.current
     val context = LocalContext.current
-    val appContainer = (context.applicationContext as TrackerinApplication).container
     
-    val authViewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(appContainer.apiService, appContainer.tokenManager)
-    )
+    val authViewModel: AuthViewModel = hiltViewModel()
     
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()

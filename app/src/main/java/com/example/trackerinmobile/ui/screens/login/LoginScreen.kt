@@ -43,6 +43,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
@@ -55,7 +56,6 @@ import android.util.Log
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
-import com.example.trackerinmobile.core.Constants
 import com.example.trackerinmobile.data.model.auth.LoginRequest
 import com.example.trackerinmobile.ui.screens.auth.AuthState
 import com.example.trackerinmobile.ui.screens.auth.AuthViewModel
@@ -75,6 +75,7 @@ import com.example.trackerinmobile.ui.theme.WhitePure
 fun LoginScreen() {
     val backStack = LocalBackStack.current
     val context = LocalContext.current
+    val googleClientId = stringResource(id = R.string.default_web_client_id)
     
     val authViewModel: AuthViewModel = hiltViewModel()
     
@@ -255,8 +256,8 @@ fun LoginScreen() {
                         val credentialManager = CredentialManager.create(context)
                         val googleIdOption = GetGoogleIdOption.Builder()
                             .setFilterByAuthorizedAccounts(false)
-                            .setServerClientId(Constants.GOOGLE_CLIENT_ID)
-                            .setAutoSelectEnabled(true)
+                            .setServerClientId(googleClientId)
+                            .setAutoSelectEnabled(false)
                             .build()
                         
                         val request = GetCredentialRequest.Builder()
@@ -267,13 +268,20 @@ fun LoginScreen() {
                         val credential = result.credential
                         
                         if (credential is com.google.android.libraries.identity.googleid.GoogleIdTokenCredential) {
+                            Log.d("AuthScreen", "Google ID Token received: ${credential.idToken.take(10)}...")
                             authViewModel.googleLogin(credential.idToken)
                         } else {
+                            Log.e("AuthScreen", "Unexpected credential type: ${credential.type}")
                             Toast.makeText(context, "Unexpected credential type", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: GetCredentialException) {
-                        Log.e("AuthScreen", "Google Sign In Error", e)
-                        Toast.makeText(context, "Google Sign In Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Log.e("AuthScreen", "Google Sign In Error. Error Type: ${e::class.java.simpleName}", e)
+                        val errorMessage = when (e) {
+                            is androidx.credentials.exceptions.NoCredentialException -> "No Google accounts found on this device. Please sign in to Google in Settings."
+                            is androidx.credentials.exceptions.GetCredentialCancellationException -> "Sign-in cancelled."
+                            else -> "Google Sign In Failed: ${e.message}"
+                        }
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
                     }
                 }
             },

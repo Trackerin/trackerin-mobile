@@ -11,6 +11,10 @@ import com.example.trackerinmobile.data.model.progress.CurriculumsResponse
 import com.example.trackerinmobile.data.model.progress.SingleTodoResponse
 import com.example.trackerinmobile.data.model.progress.TodoRequest
 import com.example.trackerinmobile.data.model.progress.TodoResponse
+import com.example.trackerinmobile.data.model.note.NoteResponse
+import com.example.trackerinmobile.data.model.note.SingleNoteResponse
+import com.example.trackerinmobile.data.model.note.CreateNoteRequest
+import com.example.trackerinmobile.data.model.note.UpdateNoteRequest
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -55,4 +59,17 @@ interface ApiService {
 
     @GET("curriculums")
     suspend fun getCurriculums(): CurriculumsResponse
+
+    // --- Notes Endpoints ---
+    @GET("notes")
+    suspend fun getNotes(): NoteResponse
+
+    @POST("notes")
+    suspend fun createNote(@Body request: CreateNoteRequest): SingleNoteResponse
+
+    @PUT("notes/{id}")
+    suspend fun updateNote(@Path("id") id: Int, @Body request: UpdateNoteRequest): SingleNoteResponse
+
+    @DELETE("notes/{id}")
+    suspend fun deleteNote(@Path("id") id: Int): MessageResponse
 }

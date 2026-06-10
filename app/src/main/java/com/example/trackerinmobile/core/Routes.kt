@@ -30,6 +30,9 @@ object Routes {
     ) : NavKey
 
     @Serializable
+    data object NotesRoute : NavKey
+
+    @Serializable
     data object DashboardRoute : NavKey
 
     @Serializable

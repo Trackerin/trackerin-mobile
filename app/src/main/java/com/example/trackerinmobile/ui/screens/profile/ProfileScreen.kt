@@ -180,6 +180,10 @@ fun ProfileScreen() {
                 border = androidx.compose.foundation.BorderStroke(1.dp, ComponentGray.copy(alpha = 0.3f))
             ) {
                 Column {
+                    MenuItem(iconRes = R.drawable.book_icon, label = "My Notes") {
+                        backStack.add(Routes.NotesRoute)
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = ComponentGray.copy(alpha = 0.2f))
                     MenuItem(iconRes = R.drawable.settings_icon, label = "Settings")
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = ComponentGray.copy(alpha = 0.2f))
                     MenuItem(iconRes = R.drawable.bell_icon, label = "Notifications")
@@ -293,11 +297,11 @@ fun StatCard(modifier: Modifier, iconRes: Int, iconTint: Color, value: String, l
 }
 
 @Composable
-fun MenuItem(iconRes: Int, label: String) {
+fun MenuItem(iconRes: Int, label: String, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* Handle click */ }
+            .clickable { onClick() }
             .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

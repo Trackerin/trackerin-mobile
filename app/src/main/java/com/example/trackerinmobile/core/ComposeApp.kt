@@ -18,6 +18,7 @@ import com.example.trackerinmobile.ui.screens.dashboard.DashboardScreen
 import com.example.trackerinmobile.ui.screens.explore.ExploreScreen
 import com.example.trackerinmobile.ui.screens.progress.ProgressScreen
 import com.example.trackerinmobile.ui.screens.profile.ProfileScreen
+import com.example.trackerinmobile.ui.screens.notes.NotesScreen
 
 @Composable
 fun ComposeApp() {
@@ -52,6 +53,7 @@ fun ComposeApp() {
                     entry<Routes.ExploreRoute> { ExploreScreen() }
                     entry<Routes.ProgressRoute> { ProgressScreen() }
                     entry<Routes.ProfileRoute> { ProfileScreen() }
+                    entry<Routes.NotesRoute> { NotesScreen() }
                 }
             )
         }

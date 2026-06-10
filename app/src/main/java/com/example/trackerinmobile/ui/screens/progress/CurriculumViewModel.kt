@@ -131,6 +131,9 @@ class CurriculumViewModel @Inject constructor(
             _error.value = null
             try {
                 val response = apiService.completeMilestone(milestoneId, CompleteMilestoneRequest(isCompleted))
+                if (isCompleted) {
+                    tokenManager.incrementDailyActivity(40f)
+                }
                 
                 // Update local detail progress
                 val currentDetail = _curriculumDetail.value

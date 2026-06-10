@@ -25,9 +25,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.trackerinmobile.R
 import com.example.trackerinmobile.core.LocalBackStack
 import com.example.trackerinmobile.core.Routes
+import com.example.trackerinmobile.core.TodoViewModel
 import com.example.trackerinmobile.ui.components.CustomBottomNavigation
 import com.example.trackerinmobile.ui.screens.auth.AuthViewModel
 import com.example.trackerinmobile.ui.theme.*
+import java.util.Locale
 
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
@@ -36,10 +38,20 @@ import com.example.trackerinmobile.ui.screens.auth.AuthState
 @Composable
 fun ProfileScreen() {
     val authViewModel: AuthViewModel = hiltViewModel()
+    val viewModel: TodoViewModel = hiltViewModel()
     val backStack = LocalBackStack.current
     val scrollState = rememberScrollState()
     val authState by authViewModel.authState.collectAsState()
     val context = LocalContext.current
+
+    // Load dynamic learning stats
+    LaunchedEffect(Unit) {
+        viewModel.loadData()
+    }
+
+    val completedRoadmapsCount by viewModel.completedRoadmapsCount.collectAsState()
+    val totalHours by viewModel.totalHours.collectAsState()
+    val currentStreak = remember { authViewModel.tokenManager.getCurrentStreak() }
 
     // Profile Data State
     val savedName = remember { authViewModel.tokenManager.getUserName() ?: "User" }
@@ -132,62 +144,34 @@ fun ProfileScreen() {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Stats Row
+            // Stats Row (Redesigned: 3 smaller compact cards side-by-side)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 StatCard(
                     modifier = Modifier.weight(1f),
                     iconRes = R.drawable.book_icon,
                     iconTint = PrimaryBlue,
-                    value = "15",
-                    label = "Course Completed"
+                    value = "$completedRoadmapsCount",
+                    label = "Completed"
                 )
                 StatCard(
                     modifier = Modifier.weight(1f),
                     iconRes = R.drawable.fire_icon,
                     iconTint = Color(0xFFFF7A00),
-                    value = "20",
-                    label = "Current Streak"
+                    value = "$currentStreak",
+                    label = "Streak"
                 )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Learning Hours Card
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = WhitePure,
-                border = androidx.compose.foundation.BorderStroke(1.dp, ComponentGray.copy(alpha = 0.3f))
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(PrimaryBlue.copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.search_icon), // Placeholder for clock
-                            contentDescription = null,
-                            tint = PrimaryBlue,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "Total Learning Hours", fontSize = 14.sp, color = TextGray)
-                    Text(text = "400hrs", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Black)
-                }
+                StatCard(
+                    modifier = Modifier.weight(1f),
+                    iconRes = R.drawable.profile_icon, // clock placeholder
+                    iconTint = Color(0xFF10B981),
+                    value = String.format(Locale.US, "%.1f", totalHours) + "h",
+                    label = "Hours"
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -378,23 +362,37 @@ fun ProfileScreen() {
 fun StatCard(modifier: Modifier, iconRes: Int, iconTint: Color, value: String, label: String) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         color = WhitePure,
-        border = androidx.compose.foundation.BorderStroke(1.dp, ComponentGray.copy(alpha = 0.3f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, ComponentGray.copy(alpha = 0.2f))
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 painter = painterResource(id = iconRes),
                 contentDescription = null,
                 tint = iconTint,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(20.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Black)
-            Text(text = label, fontSize = 12.sp, color = TextGray, textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = value,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Black,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = label,
+                fontSize = 11.sp,
+                color = TextGray,
+                textAlign = TextAlign.Center,
+                lineHeight = 14.sp
+            )
         }
     }
 }

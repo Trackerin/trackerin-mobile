@@ -4,6 +4,9 @@ import com.example.trackerinmobile.data.model.auth.AuthResponse
 import com.example.trackerinmobile.data.model.auth.GoogleAuthRequest
 import com.example.trackerinmobile.data.model.auth.LoginRequest
 import com.example.trackerinmobile.data.model.auth.RegisterRequest
+import com.example.trackerinmobile.data.model.auth.SendOtpRequest
+import com.example.trackerinmobile.data.model.auth.ResetPasswordRequest
+import com.example.trackerinmobile.data.model.auth.MessageResponse
 import com.example.trackerinmobile.data.model.progress.CurriculumsResponse
 import com.example.trackerinmobile.data.model.progress.SingleTodoResponse
 import com.example.trackerinmobile.data.model.progress.TodoRequest
@@ -19,6 +22,9 @@ interface ApiService {
     @POST("login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
 
+    @POST("register/send-otp")
+    suspend fun sendRegisterOtp(@Body request: SendOtpRequest): MessageResponse
+
     @POST("register")
     suspend fun register(@Body request: RegisterRequest): AuthResponse
 
@@ -27,6 +33,12 @@ interface ApiService {
     
     @POST("logout")
     suspend fun logout()
+
+    @POST("forgot-password/send-otp")
+    suspend fun sendForgotPasswordOtp(@Body request: SendOtpRequest): MessageResponse
+
+    @POST("forgot-password/reset")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): MessageResponse
 
     // --- Progress & Todos Endpoints ---
     @GET("todos")

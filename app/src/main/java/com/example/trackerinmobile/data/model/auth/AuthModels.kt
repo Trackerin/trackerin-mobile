@@ -15,7 +15,8 @@ data class RegisterRequest(
     val email: String,
     val password: String,
     @SerialName("password_confirmation")
-    val passwordConfirmation: String
+    val passwordConfirmation: String,
+    val otp: String
 )
 // Tambahan field untuk menyesuaikan request di RegisterScreen (misal DOB, Status, dsb) bisa ditambahkan jika disupport backend.
 // Namun api docs hanya menyebut name, email, password, password_confirmation.
@@ -50,3 +51,23 @@ data class User(
     @SerialName("updated_at")
     val updatedAt: String? = null
 )
+
+@Serializable
+data class SendOtpRequest(
+    val email: String
+)
+
+@Serializable
+data class ResetPasswordRequest(
+    val email: String,
+    val otp: String,
+    val password: String,
+    @SerialName("password_confirmation")
+    val passwordConfirmation: String
+)
+
+@Serializable
+data class MessageResponse(
+    val message: String
+)
+

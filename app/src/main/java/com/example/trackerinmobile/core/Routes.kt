@@ -15,6 +15,21 @@ object Routes {
     data object RegisterRoute : NavKey
 
     @Serializable
+    data class RegisterOtpRoute(
+        val name: String,
+        val email: String,
+        val password: String
+    ) : NavKey
+
+    @Serializable
+    data object ForgotPasswordRoute : NavKey
+
+    @Serializable
+    data class ResetPasswordRoute(
+        val email: String
+    ) : NavKey
+
+    @Serializable
     data object DashboardRoute : NavKey
 
     @Serializable

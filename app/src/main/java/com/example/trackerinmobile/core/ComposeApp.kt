@@ -11,6 +11,9 @@ import com.example.trackerinmobile.ui.theme.TrackerinMobileTheme
 import com.example.trackerinmobile.ui.screens.splash.SplashScreen
 import com.example.trackerinmobile.ui.screens.login.LoginScreen
 import com.example.trackerinmobile.ui.screens.register.RegisterScreen
+import com.example.trackerinmobile.ui.screens.register.RegisterOtpScreen
+import com.example.trackerinmobile.ui.screens.forgotpassword.ForgotPasswordScreen
+import com.example.trackerinmobile.ui.screens.resetpassword.ResetPasswordScreen
 import com.example.trackerinmobile.ui.screens.dashboard.DashboardScreen
 import com.example.trackerinmobile.ui.screens.explore.ExploreScreen
 import com.example.trackerinmobile.ui.screens.progress.ProgressScreen
@@ -32,6 +35,19 @@ fun ComposeApp() {
                     entry<Routes.SplashRoute> { SplashScreen() }
                     entry<Routes.LoginRoute> { LoginScreen() }
                     entry<Routes.RegisterRoute> { RegisterScreen() }
+                    entry<Routes.RegisterOtpRoute> { key ->
+                        RegisterOtpScreen(
+                            name = key.name,
+                            email = key.email,
+                            password = key.password
+                        )
+                    }
+                    entry<Routes.ForgotPasswordRoute> { ForgotPasswordScreen() }
+                    entry<Routes.ResetPasswordRoute> { key ->
+                        ResetPasswordScreen(
+                            email = key.email
+                        )
+                    }
                     entry<Routes.DashboardRoute> { DashboardScreen() }
                     entry<Routes.ExploreRoute> { ExploreScreen() }
                     entry<Routes.ProgressRoute> { ProgressScreen() }

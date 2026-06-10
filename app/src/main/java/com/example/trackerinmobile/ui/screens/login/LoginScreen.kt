@@ -201,7 +201,7 @@ fun LoginScreen() {
                 color = PrimaryBlue,
                 modifier = Modifier
                     .align(Alignment.End)
-                    .clickable { /* Handle forgot password */ }
+                    .clickable { backStack.add(Routes.ForgotPasswordRoute) }
             )
         }
 

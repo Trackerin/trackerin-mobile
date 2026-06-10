@@ -50,10 +50,36 @@ class TokenManager(context: Context) {
         return sharedPreferences.getString(KEY_SPECIALIZATION, "Fullstack Developer")
     }
 
+    fun setQuizCompleted(milestoneId: Int, isCompleted: Boolean) {
+        sharedPreferences.edit().putBoolean("quiz_completed_$milestoneId", isCompleted).apply()
+    }
+
+    fun isQuizCompleted(milestoneId: Int): Boolean {
+        return sharedPreferences.getBoolean("quiz_completed_$milestoneId", false)
+    }
+
     fun clearToken() {
         sharedPreferences.edit().remove(KEY_TOKEN).remove(KEY_USER_NAME)
             .remove(KEY_OCCUPATION).remove(KEY_SPECIALIZATION).apply()
     }
+
+    fun getRecentSearches(): List<String> {
+        val raw = sharedPreferences.getString("recent_searches", null)
+        if (raw == null) {
+            return listOf("Python Crash Course", "Agile Methodologies", "Figma Prototyping")
+        }
+        return raw.split("|||").filter { it.isNotEmpty() }
+    }
+
+    fun saveRecentSearch(search: String) {
+        val current = getRecentSearches().toMutableList()
+        current.remove(search)
+        current.add(0, search)
+        val limited = current.take(5)
+        val raw = limited.joinToString("|||")
+        sharedPreferences.edit().putString("recent_searches", raw).apply()
+    }
+
 
     companion object {
         private const val KEY_TOKEN = "jwt_token"

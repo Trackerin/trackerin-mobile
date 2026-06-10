@@ -43,7 +43,7 @@ class TodoViewModel @Inject constructor(private val apiService: ApiService) : Vi
                 val activeCurriculum = curriculumsResponse.data?.firstOrNull()
                 if (activeCurriculum != null) {
                     _curriculumTitle.value = activeCurriculum.topic
-                    _curriculumProgress.value = activeCurriculum.totalProgress ?: 0
+                    _curriculumProgress.value = activeCurriculum.totalProgress?.toInt() ?: 0
                 }
                 // Fetch Todos
                 val todosResponse = apiService.getTodos()

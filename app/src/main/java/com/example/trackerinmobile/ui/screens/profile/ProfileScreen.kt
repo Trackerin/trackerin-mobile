@@ -29,11 +29,17 @@ import com.example.trackerinmobile.ui.components.CustomBottomNavigation
 import com.example.trackerinmobile.ui.screens.auth.AuthViewModel
 import com.example.trackerinmobile.ui.theme.*
 
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import com.example.trackerinmobile.ui.screens.auth.AuthState
+
 @Composable
 fun ProfileScreen() {
     val authViewModel: AuthViewModel = hiltViewModel()
     val backStack = LocalBackStack.current
     val scrollState = rememberScrollState()
+    val authState by authViewModel.authState.collectAsState()
+    val context = LocalContext.current
 
     // Profile Data State
     val savedName = remember { authViewModel.tokenManager.getUserName() ?: "User" }
@@ -45,6 +51,22 @@ fun ProfileScreen() {
     var specialization by remember { mutableStateOf(savedSpecialization) }
     
     var showEditDialog by remember { mutableStateOf(false) }
+    var showContactDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.ContactSuccess -> {
+                Toast.makeText(context, "Your message has been sent successfully!", Toast.LENGTH_SHORT).show()
+                showContactDialog = false
+                authViewModel.resetState()
+            }
+            is AuthState.Error -> {
+                Toast.makeText(context, (authState as AuthState.Error).message, Toast.LENGTH_LONG).show()
+                authViewModel.resetState()
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -191,6 +213,10 @@ fun ProfileScreen() {
                     MenuItem(iconRes = R.drawable.privacy_icon, label = "Privacy")
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = ComponentGray.copy(alpha = 0.2f))
                     MenuItem(iconRes = R.drawable.helpcenter_icon, label = "Help Center")
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = ComponentGray.copy(alpha = 0.2f))
+                    MenuItem(iconRes = R.drawable.plus_icon, label = "Contact Us") {
+                        showContactDialog = true
+                    }
                 }
             }
 
@@ -263,6 +289,83 @@ fun ProfileScreen() {
                 },
                 dismissButton = {
                     TextButton(onClick = { showEditDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        if (showContactDialog) {
+            var contactName by remember { mutableStateOf(name) }
+            var contactEmail by remember { mutableStateOf("") }
+            var contactSubject by remember { mutableStateOf("") }
+            var contactMessage by remember { mutableStateOf("") }
+
+            AlertDialog(
+                onDismissRequest = { showContactDialog = false },
+                title = { Text("Contact Us", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = contactName,
+                            onValueChange = { contactName = it },
+                            label = { Text("Your Name") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = contactEmail,
+                            onValueChange = { contactEmail = it },
+                            label = { Text("Your Email") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = contactSubject,
+                            onValueChange = { contactSubject = it },
+                            label = { Text("Subject") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = contactMessage,
+                            onValueChange = { contactMessage = it },
+                            label = { Text("Message") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3
+                        )
+                    }
+                },
+                confirmButton = {
+                    val isLoading = authState is AuthState.Loading
+                    Button(
+                        onClick = {
+                            if (contactName.isNotBlank() && contactEmail.isNotBlank() && contactSubject.isNotBlank() && contactMessage.isNotBlank()) {
+                                authViewModel.sendContactMessage(
+                                    name = contactName,
+                                    email = contactEmail,
+                                    subject = contactSubject,
+                                    message = contactMessage
+                                )
+                            } else {
+                                Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                        enabled = !isLoading
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = WhitePure, strokeWidth = 2.dp)
+                        } else {
+                            Text("Send", color = WhitePure)
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showContactDialog = false },
+                        enabled = authState !is AuthState.Loading
+                    ) {
                         Text("Cancel")
                     }
                 }

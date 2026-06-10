@@ -47,6 +47,10 @@ fun DashboardScreen() {
 
     val backStack = LocalBackStack.current
 
+    LaunchedEffect(Unit) {
+        viewModel.loadData()
+    }
+
     Scaffold(
         bottomBar = {
             CustomBottomNavigation(
@@ -97,7 +101,9 @@ fun DashboardScreen() {
             Spacer(modifier = Modifier.height(16.dp))
             ActionButtonsRow()
             Spacer(modifier = Modifier.height(16.dp))
-            CreateRoadmapWidget()
+            CreateRoadmapWidget(
+                onClick = { backStack.add(Routes.ExploreRoute) }
+            )
             Spacer(modifier = Modifier.height(16.dp))
             ProgressOverviewWidget()
             Spacer(modifier = Modifier.height(16.dp))
@@ -429,13 +435,14 @@ fun ActionButtonsRow() {
 }
 
 @Composable
-fun CreateRoadmapWidget() {
+fun CreateRoadmapWidget(onClick: () -> Unit) {
     // Customization: Disesuaikan agar lebih serasi, tanpa icon bintang
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, ComponentGray.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
             .background(WhitePure, RoundedCornerShape(16.dp))
+            .clickable { onClick() }
             .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween

@@ -27,12 +27,25 @@ import com.example.trackerinmobile.core.TodoViewModel
 import com.example.trackerinmobile.ui.components.CustomBottomNavigation
 import com.example.trackerinmobile.ui.theme.*
 
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
+import com.example.trackerinmobile.data.model.progress.CurriculumApiModel
+
 @Composable
 fun ProgressScreen() {
     val viewModel: TodoViewModel = hiltViewModel()
+    val curriculumViewModel: CurriculumViewModel = hiltViewModel()
 
     val todos by viewModel.todos.collectAsState()
+    val curriculums by curriculumViewModel.curriculums.collectAsState()
+    val isLoadingCurriculums by curriculumViewModel.isLoading.collectAsState()
+    val curriculumError by curriculumViewModel.error.collectAsState()
+
+
     val backStack = LocalBackStack.current
+    val context = LocalContext.current
 
     // State for Add/Edit Todo Dialog
     var showTodoDialog by remember { mutableStateOf(false) }
@@ -41,8 +54,26 @@ fun ProgressScreen() {
     var todoInputDesc by remember { mutableStateOf("") }
     var todoInputDue by remember { mutableStateOf("") }
 
+    var showCompleted by remember { mutableStateOf(false) }
+
+    val activeRoadmaps = curriculums.filter { (it.totalProgress ?: 0.0) < 100.0 }
+    val completedRoadmaps = curriculums.filter { (it.totalProgress ?: 0.0) >= 100.0 }
+    val roadmapsToShow = if (showCompleted) curriculums else activeRoadmaps
+
     // Sort todos: Incomplete first, Complete last
     val sortedTodos = todos.sortedBy { it.isCompleted }
+
+    LaunchedEffect(Unit) {
+        curriculumViewModel.loadCurriculums()
+        viewModel.loadData()
+    }
+
+    LaunchedEffect(curriculumError) {
+        curriculumError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            curriculumViewModel.clearError()
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -86,10 +117,107 @@ fun ProgressScreen() {
                     .padding(horizontal = 24.dp),
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
+                // Section: AI Curriculums
                 item {
-                    RoadmapCard()
-                    Spacer(modifier = Modifier.height(32.dp))
-                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "My AI Roadmaps",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Black
+                        )
+
+                        if (completedRoadmaps.isNotEmpty()) {
+                            Text(
+                                text = if (showCompleted) "Hide Completed" else "View Completed (${completedRoadmaps.size})",
+                                color = PrimaryBlue,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .clickable { showCompleted = !showCompleted }
+                                    .padding(4.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                if (isLoadingCurriculums && curriculums.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = PrimaryBlue)
+                        }
+                    }
+                } else if (roadmapsToShow.isEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, ComponentGray.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                                .background(WhitePure, RoundedCornerShape(16.dp))
+                                .padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            val emptyText = if (activeRoadmaps.isEmpty() && completedRoadmaps.isNotEmpty()) {
+                                "All your roadmaps are completed! 🎉"
+                            } else {
+                                "No AI curriculums generated yet."
+                            }
+                            Text(
+                                text = emptyText,
+                                fontSize = 14.sp,
+                                color = TextGray,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = { backStack.add(Routes.ExploreRoute) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("New Roadmap")
+                                }
+
+                                if (activeRoadmaps.isEmpty() && completedRoadmaps.isNotEmpty() && !showCompleted) {
+                                    OutlinedButton(
+                                        onClick = { showCompleted = true },
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryBlue),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue)
+                                    ) {
+                                        Text("View Completed")
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(32.dp))
+                    }
+                } else {
+                    items(roadmapsToShow) { curriculum ->
+                        CurriculumCard(
+                            curriculum = curriculum,
+                            onClick = {
+                                backStack.add(Routes.CurriculumDetailRoute(curriculumId = curriculum.id))
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+                
+                item {
                     // To Do Header
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -210,12 +338,17 @@ fun ProgressScreen() {
 }
 
 @Composable
-fun RoadmapCard() {
+fun CurriculumCard(
+    curriculum: CurriculumApiModel,
+    onClick: () -> Unit
+) {
+    val progressVal = curriculum.totalProgress ?: 0.0
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, ComponentGray.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
             .background(WhitePure, RoundedCornerShape(16.dp))
+            .clickable { onClick() }
             .padding(20.dp)
     ) {
         Row(
@@ -227,7 +360,7 @@ fun RoadmapCard() {
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "In Progress",
+                    text = if (progressVal >= 100.0) "Completed" else "In Progress",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Black
@@ -235,7 +368,7 @@ fun RoadmapCard() {
             }
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = "Update 2 days ago",
+                text = "Active path",
                 fontSize = 14.sp,
                 color = PrimaryBlue,
                 fontWeight = FontWeight.Medium
@@ -245,29 +378,23 @@ fun RoadmapCard() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Curriculum",
-            fontSize = 32.sp,
+            text = curriculum.topic,
+            fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = Black,
-            lineHeight = 36.sp
-        )
-        Text(
-            text = "Roadmap",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = Black,
-            lineHeight = 36.sp
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Progres view", fontSize = 12.sp, color = PrimaryBlue)
-            Text("60%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Black)
+            Text("Progress", fontSize = 12.sp, color = PrimaryBlue)
+            Text("${progressVal.toInt()}%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Black)
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -276,34 +403,17 @@ fun RoadmapCard() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(12.dp)
-                .clip(RoundedCornerShape(6.dp))
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp))
                 .background(Color(0xFFAAC4FF))
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .height(12.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .fillMaxWidth((progressVal / 100.0).coerceIn(0.0, 1.0).toFloat())
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
                     .background(PrimaryBlue)
             )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = { /* TODO Reset */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .border(1.dp, PrimaryBlue, RoundedCornerShape(8.dp)),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFC6D8FF),
-                contentColor = Black
-            ),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Text("Reset Roadmap", fontWeight = FontWeight.Medium)
         }
     }
 }

@@ -11,6 +11,13 @@ import com.example.trackerinmobile.data.model.progress.CurriculumsResponse
 import com.example.trackerinmobile.data.model.progress.SingleTodoResponse
 import com.example.trackerinmobile.data.model.progress.TodoRequest
 import com.example.trackerinmobile.data.model.progress.TodoResponse
+import com.example.trackerinmobile.data.model.progress.CurriculumDetailResponse
+import com.example.trackerinmobile.data.model.progress.GenerateCurriculumRequest
+import com.example.trackerinmobile.data.model.progress.GenerateCurriculumResponse
+import com.example.trackerinmobile.data.model.progress.CompleteMilestoneRequest
+import com.example.trackerinmobile.data.model.progress.CompleteMilestoneResponse
+import com.example.trackerinmobile.data.model.progress.QuizResponse
+import com.example.trackerinmobile.data.model.progress.ContactRequest
 import com.example.trackerinmobile.data.model.note.NoteResponse
 import com.example.trackerinmobile.data.model.note.SingleNoteResponse
 import com.example.trackerinmobile.data.model.note.CreateNoteRequest
@@ -72,4 +79,21 @@ interface ApiService {
 
     @DELETE("notes/{id}")
     suspend fun deleteNote(@Path("id") id: Int): MessageResponse
+
+    // --- Curriculum & Milestones Endpoints ---
+    @POST("curriculums/generate")
+    suspend fun generateCurriculum(@Body request: GenerateCurriculumRequest): GenerateCurriculumResponse
+
+    @GET("curriculums/{id}")
+    suspend fun getCurriculumDetail(@Path("id") id: Int): CurriculumDetailResponse
+
+    @PUT("milestones/{id}/complete")
+    suspend fun completeMilestone(@Path("id") id: Int, @Body request: CompleteMilestoneRequest): CompleteMilestoneResponse
+
+    @POST("milestones/{id}/generate-quiz")
+    suspend fun generateQuiz(@Path("id") id: Int): QuizResponse
+
+    // --- Contact Us Endpoint ---
+    @POST("contact")
+    suspend fun sendContactMessage(@Body request: ContactRequest): MessageResponse
 }

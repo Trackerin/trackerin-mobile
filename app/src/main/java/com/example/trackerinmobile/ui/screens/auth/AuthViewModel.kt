@@ -8,6 +8,7 @@ import com.example.trackerinmobile.data.model.auth.LoginRequest
 import com.example.trackerinmobile.data.model.auth.RegisterRequest
 import com.example.trackerinmobile.data.model.auth.SendOtpRequest
 import com.example.trackerinmobile.data.model.auth.ResetPasswordRequest
+import com.example.trackerinmobile.data.model.progress.ContactRequest
 import com.example.trackerinmobile.data.network.ApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,7 @@ sealed class AuthState {
     object RegisterOtpSent : AuthState()
     object ForgotPasswordOtpSent : AuthState()
     object PasswordResetSuccess : AuthState()
+    object ContactSuccess : AuthState()
     data class Error(val message: String) : AuthState()
 }
 
@@ -147,6 +149,18 @@ class AuthViewModel @Inject constructor(
                 // Even if API fails, we clear local token
             } finally {
                 tokenManager.clearToken()
+            }
+        }
+    }
+
+    fun sendContactMessage(name: String, email: String, subject: String, message: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            try {
+                apiService.sendContactMessage(ContactRequest(name, email, subject, message))
+                _authState.value = AuthState.ContactSuccess
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(parseErrorBody(e))
             }
         }
     }

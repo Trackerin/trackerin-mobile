@@ -33,6 +33,16 @@ object Routes {
     data object NotesRoute : NavKey
 
     @Serializable
+    data class CurriculumDetailRoute(
+        val curriculumId: Int
+    ) : NavKey
+
+    @Serializable
+    data class QuizRoute(
+        val milestoneId: Int
+    ) : NavKey
+
+    @Serializable
     data object DashboardRoute : NavKey
 
     @Serializable

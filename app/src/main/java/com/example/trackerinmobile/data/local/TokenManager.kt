@@ -43,7 +43,7 @@ class TokenManager(context: Context) {
     }
 
     fun getOccupation(): String? {
-        return sharedPreferences.getString(KEY_OCCUPATION, "College Student, 4th Semester")
+        return sharedPreferences.getString(KEY_OCCUPATION, null)
     }
 
     fun saveSpecialization(spec: String) {
@@ -51,7 +51,7 @@ class TokenManager(context: Context) {
     }
 
     fun getSpecialization(): String? {
-        return sharedPreferences.getString(KEY_SPECIALIZATION, "Fullstack Developer")
+        return sharedPreferences.getString(KEY_SPECIALIZATION, null)
     }
 
     fun setQuizCompleted(milestoneId: Int, isCompleted: Boolean) {
@@ -63,8 +63,7 @@ class TokenManager(context: Context) {
     }
 
     fun clearToken() {
-        sharedPreferences.edit().remove(KEY_TOKEN).remove(KEY_USER_NAME)
-            .remove(KEY_OCCUPATION).remove(KEY_SPECIALIZATION).apply()
+        sharedPreferences.edit().clear().apply()
     }
 
     fun getRecentSearches(): List<String> {
@@ -209,13 +208,7 @@ class TokenManager(context: Context) {
             return value
         }
         
-        // Fallback placeholder values for past/current days only (to look nice initially)
-        return when (day) {
-            "MON" -> 40f
-            "TUE" -> 30f
-            "WED" -> 20f
-            else -> 0f
-        }
+        return 0f
     }
     fun saveEmail(email: String) {
         sharedPreferences.edit().putString(KEY_EMAIL, email).apply()

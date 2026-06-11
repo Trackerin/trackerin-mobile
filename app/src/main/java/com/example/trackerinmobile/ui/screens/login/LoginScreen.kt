@@ -270,9 +270,19 @@ fun LoginScreen() {
                         if (credential is com.google.android.libraries.identity.googleid.GoogleIdTokenCredential) {
                             Log.d("AuthScreen", "Google ID Token received: ${credential.idToken.take(10)}...")
                             authViewModel.googleLogin(credential.idToken)
+                        } else if (credential is androidx.credentials.CustomCredential &&
+                            credential.type == com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                            try {
+                                val googleIdTokenCredential = com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.createFrom(credential.data)
+                                Log.d("AuthScreen", "Google ID Token received via CustomCredential: ${googleIdTokenCredential.idToken.take(10)}...")
+                                authViewModel.googleLogin(googleIdTokenCredential.idToken)
+                            } catch (e: Exception) {
+                                Log.e("AuthScreen", "Failed to parse Google ID Token from custom credential", e)
+                                Toast.makeText(context, "Unexpected credential type", Toast.LENGTH_SHORT).show()
+                            }
                         } else {
                             Log.e("AuthScreen", "Unexpected credential type: ${credential.type}")
-                            Toast.makeText(context, "Unexpected credential type", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Unexpected credential type: ${credential.type}", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: GetCredentialException) {
                         Log.e("AuthScreen", "Google Sign In Error. Error Type: ${e::class.java.simpleName}", e)

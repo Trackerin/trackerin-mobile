@@ -43,13 +43,6 @@ fun ExploreScreen() {
         }
     }
     var hasSearchedTopic by remember { mutableStateOf<String?>(null) }
-    
-    val smartSuggestions = listOf(
-        SuggestionItem("Data Science Fundamentals", R.drawable.fire_icon),
-        SuggestionItem("UI/UX Design Systems", R.drawable.plus_icon),
-        SuggestionItem("Machine Learning Models", R.drawable.book_icon),
-        SuggestionItem("Advanced React Patterns", R.drawable.search_icon),
-    )
 
     LaunchedEffect(error) {
         error?.let {
@@ -240,59 +233,7 @@ fun ExploreScreen() {
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "Smart Suggestions",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Black,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
             Spacer(modifier = Modifier.height(16.dp))
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                SuggestionChip(smartSuggestions[0]) {
-                    val topic = smartSuggestions[0].text
-                    searchQuery = topic
-                    hasSearchedTopic = topic
-                    curriculumViewModel.tokenManager.saveRecentSearch(topic)
-                    recentSearches.clear()
-                    recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
-                }
-                
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
-                    SuggestionChip(smartSuggestions[1]) {
-                        val topic = smartSuggestions[1].text
-                        searchQuery = topic
-                        hasSearchedTopic = topic
-                        curriculumViewModel.tokenManager.saveRecentSearch(topic)
-                        recentSearches.clear()
-                        recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
-                    }
-                    SuggestionChip(smartSuggestions[2]) {
-                        val topic = smartSuggestions[2].text
-                        searchQuery = topic
-                        hasSearchedTopic = topic
-                        curriculumViewModel.tokenManager.saveRecentSearch(topic)
-                        recentSearches.clear()
-                        recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
-                    }
-                }
-
-                SuggestionChip(smartSuggestions[3]) {
-                    val topic = smartSuggestions[3].text
-                    searchQuery = topic
-                    hasSearchedTopic = topic
-                    curriculumViewModel.tokenManager.saveRecentSearch(topic)
-                    recentSearches.clear()
-                    recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
-                }
-            }
         }
     }
 }
@@ -327,29 +268,4 @@ fun RecentSearchItem(text: String, onClick: () -> Unit) {
     }
 }
 
-@Composable
-fun SuggestionChip(item: SuggestionItem, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue),
-        color = Color(0xFFF1F5F9), 
-        modifier = Modifier.height(36.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                painter = painterResource(id = item.iconRes),
-                contentDescription = null,
-                tint = PrimaryBlue,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = item.text, fontSize = 12.sp, color = Black, fontWeight = FontWeight.SemiBold)
-        }
-    }
-}
 
-data class SuggestionItem(val text: String, val iconRes: Int)

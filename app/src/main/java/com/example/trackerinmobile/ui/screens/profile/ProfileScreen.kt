@@ -55,8 +55,8 @@ fun ProfileScreen() {
 
     // Profile Data State
     val name = authViewModel.tokenManager.getUserName() ?: "User"
-    val occupation = authViewModel.tokenManager.getOccupation() ?: "College Student, 4th Semester"
-    val specialization = authViewModel.tokenManager.getSpecialization() ?: "Fullstack Developer"
+    val occupation = authViewModel.tokenManager.getOccupation() ?: "Status/Pendidikan belum diatur"
+    val specialization = authViewModel.tokenManager.getSpecialization() ?: "Bidang minat belum diatur"
     
     var showContactDialog by remember { mutableStateOf(false) }
 
@@ -106,16 +106,23 @@ fun ProfileScreen() {
             )
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Profile Picture
-            Image(
-                painter = painterResource(id = R.drawable.temporary_profile),
-                contentDescription = "Profile Picture",
+            // Profile Initials Circle
+            val firstLetter = name.trim().firstOrNull()?.toString()?.uppercase(Locale.getDefault()) ?: "U"
+            Box(
                 modifier = Modifier
                     .size(120.dp)
                     .clip(CircleShape)
-                    .border(2.dp, Color.Transparent, CircleShape),
-                contentScale = ContentScale.Crop
-            )
+                    .background(PrimaryBlue.copy(alpha = 0.1f))
+                    .border(2.dp, PrimaryBlue, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = firstLetter,
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryBlue
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 

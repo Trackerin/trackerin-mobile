@@ -226,16 +226,23 @@ fun DashboardHeader(userName: String) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // User Profile Picture instead of Initials
-            Image(
-                painter = painterResource(id = R.drawable.temporary_profile),
-                contentDescription = "Profile Picture",
+            // User Profile Initials Circle instead of developer picture
+            val firstLetter = userName.trim().firstOrNull()?.toString()?.uppercase(Locale.getDefault()) ?: "U"
+            Box(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .border(1.dp, ComponentGray.copy(alpha = 0.3f), CircleShape),
-                contentScale = ContentScale.Crop
-            )
+                    .background(PrimaryBlue.copy(alpha = 0.1f))
+                    .border(1.dp, PrimaryBlue, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = firstLetter,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryBlue
+                )
+            }
 
             Spacer(modifier = Modifier.width(12.dp))
 

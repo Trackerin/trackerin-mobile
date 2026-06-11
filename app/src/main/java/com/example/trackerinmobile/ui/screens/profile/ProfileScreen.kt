@@ -185,15 +185,9 @@ fun ProfileScreen() {
                         backStack.add(Routes.NotesRoute)
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = ComponentGray.copy(alpha = 0.2f))
-                    MenuItem(iconRes = R.drawable.settings_icon, label = "Settings")
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = ComponentGray.copy(alpha = 0.2f))
                     MenuItem(iconRes = R.drawable.bell_icon, label = "Notifications") {
                         backStack.add(Routes.NotificationsRoute)
                     }
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = ComponentGray.copy(alpha = 0.2f))
-                    MenuItem(iconRes = R.drawable.privacy_icon, label = "Privacy")
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = ComponentGray.copy(alpha = 0.2f))
-                    MenuItem(iconRes = R.drawable.helpcenter_icon, label = "Help Center")
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = ComponentGray.copy(alpha = 0.2f))
                     MenuItem(iconRes = R.drawable.plus_icon, label = "Contact Us") {
                         showContactDialog = true

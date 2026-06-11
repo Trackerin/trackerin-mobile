@@ -75,6 +75,10 @@ class TokenManager(context: Context) {
         return raw.split("|||").filter { it.isNotEmpty() }
     }
 
+    fun clearRecentSearches() {
+        sharedPreferences.edit().remove("recent_searches").apply()
+    }
+
     fun saveRecentSearch(search: String) {
         val current = getRecentSearches().toMutableList()
         current.remove(search)

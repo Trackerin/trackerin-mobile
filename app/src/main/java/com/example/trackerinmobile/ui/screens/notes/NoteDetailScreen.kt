@@ -39,6 +39,7 @@ fun NoteDetailScreen(noteId: Int? = null) {
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     var isInitialized by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     // Initialize fields once the notes are loaded (if editing)
     LaunchedEffect(notes, noteId) {
@@ -112,12 +113,7 @@ fun NoteDetailScreen(noteId: Int? = null) {
                     // Delete button (only for existing notes)
                     if (noteId != null) {
                         TextButton(
-                            onClick = {
-                                viewModel.deleteNote(noteId) {
-                                    Toast.makeText(context, "Note deleted successfully!", Toast.LENGTH_SHORT).show()
-                                    backStack.removeLastOrNull()
-                                }
-                            },
+                            onClick = { showDeleteConfirm = true },
                             colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
                         ) {
                             Text("Delete", fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -246,5 +242,34 @@ fun NoteDetailScreen(noteId: Int? = null) {
                 }
             }
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete Note", fontWeight = FontWeight.Bold) },
+            text = { Text("Are you sure you want to delete this note?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        viewModel.deleteNote(noteId!!) {
+                            Toast.makeText(context, "Note deleted successfully!", Toast.LENGTH_SHORT).show()
+                            backStack.removeLastOrNull()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Delete", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel")
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = WhitePure
+        )
     }
 }

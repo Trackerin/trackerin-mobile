@@ -414,62 +414,33 @@ fun TasksWidget(
 
 @Composable
 fun TaskItem(todo: Todo, onToggleComplete: () -> Unit, onClick: () -> Unit) {
-    val isCompleted = todo.isCompleted
-    Column(
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = if (isCompleted) 4.dp else 8.dp)
+            .padding(vertical = 6.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clip(CircleShape)
+                .border(2.dp, PrimaryBlue, CircleShape)
+                .background(if (todo.isCompleted) PrimaryBlue else Color.Transparent)
+                .clickable { onToggleComplete() },
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(20.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, PrimaryBlue, CircleShape)
-                    .background(if (isCompleted) PrimaryBlue else Color.Transparent)
-                    .clickable { onToggleComplete() },
-                contentAlignment = Alignment.Center
-            ) {
-                if (isCompleted) {
-                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(WhitePure))
-                }
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = todo.title,
-                fontSize = 14.sp,
-                color = if (isCompleted) TextGray else Black,
-                textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-                modifier = Modifier.weight(1f)
-            )
-        }
-        if (!isCompleted) {
-            if (todo.description.isNotBlank() || todo.dueDate.isNotBlank()) {
-                Column(modifier = Modifier.padding(start = 32.dp, top = 4.dp)) {
-                    if (todo.description.isNotBlank()) {
-                        Text(
-                            text = todo.description,
-                            fontSize = 12.sp,
-                            color = TextGray,
-                            lineHeight = 16.sp
-                        )
-                    }
-                    if (todo.dueDate.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = todo.dueDate,
-                            fontSize = 11.sp,
-                            color = PrimaryBlue,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
+            if (todo.isCompleted) {
+                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(WhitePure))
             }
         }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = todo.title,
+            fontSize = 14.sp,
+            color = if (todo.isCompleted) TextGray else Black,
+            textDecoration = if (todo.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+            modifier = Modifier.weight(1f).clickable { onClick() }
+        )
     }
 }
 

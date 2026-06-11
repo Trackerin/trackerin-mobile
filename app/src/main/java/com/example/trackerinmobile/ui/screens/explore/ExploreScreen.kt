@@ -202,14 +202,32 @@ fun ExploreScreen() {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Text(
-                text = "Recent Search",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Black,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Recent Search",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Black
+                )
+                if (recentSearches.isNotEmpty()) {
+                    Text(
+                        text = "Clear All",
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clickable {
+                                curriculumViewModel.tokenManager.clearRecentSearches()
+                                recentSearches.clear()
+                            }
+                            .padding(4.dp)
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {

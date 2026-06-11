@@ -420,8 +420,9 @@ fun CurriculumCard(
 
 @Composable
 fun ProgressTodoItem(todo: Todo, onClick: () -> Unit, onToggle: () -> Unit) {
-    val opacity = if (todo.isCompleted) 0.5f else 1f
-    val bgColor = if (todo.isCompleted) ComponentGray.copy(alpha = 0.2f) else WhitePure
+    val isCompleted = todo.isCompleted
+    val opacity = if (isCompleted) 0.5f else 1f
+    val bgColor = if (isCompleted) ComponentGray.copy(alpha = 0.2f) else WhitePure
     
     Column(
         modifier = Modifier
@@ -429,15 +430,18 @@ fun ProgressTodoItem(todo: Todo, onClick: () -> Unit, onToggle: () -> Unit) {
             .border(1.dp, ComponentGray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
             .background(bgColor, RoundedCornerShape(12.dp))
             .clickable { onClick() } // Open detail/edit modal
-            .padding(16.dp)
+            .padding(
+                vertical = if (isCompleted) 10.dp else 16.dp,
+                horizontal = 16.dp
+            )
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween, 
-            verticalAlignment = Alignment.Top,
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                if (todo.dueDate.isNotEmpty()) {
+                if (!isCompleted && todo.dueDate.isNotEmpty()) {
                     Text(
                         text = todo.dueDate,
                         fontSize = 12.sp,
@@ -448,12 +452,13 @@ fun ProgressTodoItem(todo: Todo, onClick: () -> Unit, onToggle: () -> Unit) {
                 
                 Text(
                     text = todo.title,
-                    fontSize = 18.sp,
+                    fontSize = if (isCompleted) 15.sp else 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Black.copy(alpha = opacity)
+                    color = Black.copy(alpha = opacity),
+                    textDecoration = if (isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else androidx.compose.ui.text.style.TextDecoration.None
                 )
                 
-                if (todo.description.isNotEmpty()) {
+                if (!isCompleted && todo.description.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = todo.description,
@@ -471,11 +476,11 @@ fun ProgressTodoItem(todo: Todo, onClick: () -> Unit, onToggle: () -> Unit) {
                     .size(24.dp)
                     .clip(CircleShape)
                     .border(2.dp, PrimaryBlue.copy(alpha = opacity), CircleShape)
-                    .background(if (todo.isCompleted) PrimaryBlue.copy(alpha = opacity) else Color.Transparent)
+                    .background(if (isCompleted) PrimaryBlue.copy(alpha = opacity) else Color.Transparent)
                     .clickable { onToggle() },
                 contentAlignment = Alignment.Center
             ) {
-                if (todo.isCompleted) {
+                if (isCompleted) {
                     Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(WhitePure.copy(alpha = opacity)))
                 }
             }

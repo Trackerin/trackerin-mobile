@@ -33,6 +33,7 @@ import com.example.trackerinmobile.R
 import com.example.trackerinmobile.core.LocalBackStack
 import com.example.trackerinmobile.ui.screens.auth.AuthViewModel
 import com.example.trackerinmobile.ui.theme.*
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,20 +96,27 @@ fun EditProfileScreen() {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Profile Image (Statically rendered but beautifully styled)
+            // Profile Image (Initials circle matching other screens)
+            val firstLetter = initialName.trim().firstOrNull()?.toString()?.uppercase(Locale.getDefault()) ?: "U"
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.temporary_profile),
-                    contentDescription = "Profile Picture",
+                Box(
                     modifier = Modifier
                         .size(120.dp)
                         .clip(CircleShape)
+                        .background(PrimaryBlue.copy(alpha = 0.1f))
                         .border(3.dp, PrimaryBlue, CircleShape),
-                    contentScale = ContentScale.Crop
-                )
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = firstLetter,
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryBlue
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))

@@ -210,6 +210,25 @@ class CurriculumViewModel @Inject constructor(
         _quiz.value = null
     }
 
+    fun deleteCurriculum(curriculumId: Int, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            try {
+                apiService.deleteCurriculum(curriculumId)
+                _curriculums.value = _curriculums.value.filter { it.id != curriculumId }
+                if (_curriculumDetail.value?.id == curriculumId) {
+                    _curriculumDetail.value = null
+                }
+                onSuccess()
+            } catch (e: Exception) {
+                _error.value = parseErrorBody(e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun clearError() {
         _error.value = null
     }

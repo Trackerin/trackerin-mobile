@@ -40,6 +40,7 @@ fun CurriculumDetailScreen(curriculumId: Int) {
     val context = LocalContext.current
 
     var generatingQuizForId by remember { mutableStateOf<Int?>(null) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(curriculumId) {
         viewModel.loadCurriculumDetail(curriculumId)
@@ -64,25 +65,35 @@ fun CurriculumDetailScreen(curriculumId: Int) {
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    IconButton(
-                        onClick = { backStack.removeLastOrNull() }
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.arrow_right),
-                            contentDescription = "Back",
-                            tint = Black,
-                            modifier = Modifier.rotate(180f)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { backStack.removeLastOrNull() }
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.arrow_right),
+                                contentDescription = "Back",
+                                tint = Black,
+                                modifier = Modifier.rotate(180f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Curriculum Roadmap",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Black
                         )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Curriculum Roadmap",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Black
-                    )
+
+                    TextButton(
+                        onClick = { showDeleteConfirm = true },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                    ) {
+                        Text("Delete", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
                 }
             }
         }
@@ -254,6 +265,35 @@ fun CurriculumDetailScreen(curriculumId: Int) {
                 }
             }
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete Roadmap", fontWeight = FontWeight.Bold) },
+            text = { Text("Are you sure you want to delete this learning roadmap?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        viewModel.deleteCurriculum(curriculumId) {
+                            Toast.makeText(context, "Roadmap deleted successfully!", Toast.LENGTH_SHORT).show()
+                            backStack.removeLastOrNull()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Delete", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel")
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = WhitePure
+        )
     }
 }
 

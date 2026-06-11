@@ -89,6 +89,9 @@ interface ApiService {
     @GET("curriculums/{id}")
     suspend fun getCurriculumDetail(@Path("id") id: Int): CurriculumDetailResponse
 
+    @DELETE("curriculums/{id}")
+    suspend fun deleteCurriculum(@Path("id") id: Int): MessageResponse
+
     @PUT("milestones/{id}/complete")
     suspend fun completeMilestone(@Path("id") id: Int, @Body request: CompleteMilestoneRequest): CompleteMilestoneResponse
 

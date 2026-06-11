@@ -149,7 +149,7 @@ class TodoViewModel @Inject constructor(
                 var wTopics = 0
                 for (day in weekdays) {
                     val act = tokenManager.getDailyActivity(day)
-                    if (act > 0f) {
+                    if (act >= 0f) {
                         wDays++
                         wHours += act * 0.05
                         if (act >= 40f) {

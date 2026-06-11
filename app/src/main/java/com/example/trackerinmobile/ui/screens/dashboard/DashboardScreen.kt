@@ -623,13 +623,13 @@ fun WeeklyProgressChartWidget(tokenManager: TokenManager) {
         Spacer(modifier = Modifier.height(24.dp))
 
         // Get actual values from TokenManager
-        val monVal = tokenManager.getDailyActivity("MON")
-        val tueVal = tokenManager.getDailyActivity("TUE")
-        val wedVal = tokenManager.getDailyActivity("WED")
-        val thuVal = tokenManager.getDailyActivity("THU")
-        val friVal = tokenManager.getDailyActivity("FRI")
-        val satVal = tokenManager.getDailyActivity("SAT")
-        val sunVal = tokenManager.getDailyActivity("SUN")
+        val monVal = tokenManager.getDailyActivity("MON").coerceAtLeast(0f)
+        val tueVal = tokenManager.getDailyActivity("TUE").coerceAtLeast(0f)
+        val wedVal = tokenManager.getDailyActivity("WED").coerceAtLeast(0f)
+        val thuVal = tokenManager.getDailyActivity("THU").coerceAtLeast(0f)
+        val friVal = tokenManager.getDailyActivity("FRI").coerceAtLeast(0f)
+        val satVal = tokenManager.getDailyActivity("SAT").coerceAtLeast(0f)
+        val sunVal = tokenManager.getDailyActivity("SUN").coerceAtLeast(0f)
 
         // Find current day of the week to highlight it
         val currentDay = SimpleDateFormat("EEE", Locale.US).format(Date()).uppercase()

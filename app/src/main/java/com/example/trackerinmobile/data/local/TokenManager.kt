@@ -94,6 +94,14 @@ class TokenManager(context: Context) {
         val lastActive = sharedPreferences.getString("last_active_date", null)
         val activeDates = sharedPreferences.getStringSet("active_dates", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
         
+        // Also ensure today's weekday activity is initialized to 0f instead of -1f
+        checkAndResetWeeklyActivity()
+        val dayOfWeekStr = SimpleDateFormat("EEE", Locale.US).format(Date()).uppercase()
+        val key = "activity_$dayOfWeekStr"
+        if (sharedPreferences.getFloat(key, -1f) < 0f) {
+            sharedPreferences.edit().putFloat(key, 0f).apply()
+        }
+
         if (!activeDates.contains(todayStr)) {
             activeDates.add(todayStr)
             sharedPreferences.edit().putStringSet("active_dates", activeDates).apply()
@@ -198,17 +206,12 @@ class TokenManager(context: Context) {
         val currentDayIndex = getDayIndex(currentDayStr)
         val targetDayIndex = getDayIndex(day)
         
-        // If it's a future day this week, it should have 0f activity
+        // If it's a future day this week, it should have -1f activity
         if (targetDayIndex > currentDayIndex) {
-            return 0f
+            return -1f
         }
         
-        val value = sharedPreferences.getFloat("activity_$day", -1f)
-        if (value >= 0f) {
-            return value
-        }
-        
-        return 0f
+        return sharedPreferences.getFloat("activity_$day", -1f)
     }
     fun saveEmail(email: String) {
         sharedPreferences.edit().putString(KEY_EMAIL, email).apply()

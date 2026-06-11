@@ -68,6 +68,7 @@ class AuthViewModel @Inject constructor(
             _authState.value = AuthState.Loading
             try {
                 val response = apiService.login(request)
+                tokenManager.clearToken()
                 tokenManager.saveToken(response.accessToken)
                 tokenManager.saveUserName(response.data.name)
                 _authState.value = AuthState.Success
@@ -82,6 +83,7 @@ class AuthViewModel @Inject constructor(
             _authState.value = AuthState.Loading
             try {
                 val response = apiService.register(request)
+                tokenManager.clearToken()
                 tokenManager.saveToken(response.accessToken)
                 tokenManager.saveUserName(response.data.name)
                 _authState.value = AuthState.Success
@@ -132,6 +134,7 @@ class AuthViewModel @Inject constructor(
             _authState.value = AuthState.Loading
             try {
                 val response = apiService.googleLogin(GoogleAuthRequest(idToken))
+                tokenManager.clearToken()
                 tokenManager.saveToken(response.accessToken)
                 tokenManager.saveUserName(response.data.name)
                 _authState.value = AuthState.Success

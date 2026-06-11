@@ -58,6 +58,9 @@ object Routes {
     data object EditProfileRoute : NavKey
 
     @Serializable
+    data object NotificationsRoute : NavKey
+
+    @Serializable
     data class NoteDetailRoute(
         val noteId: Int? = null
     ) : NavKey

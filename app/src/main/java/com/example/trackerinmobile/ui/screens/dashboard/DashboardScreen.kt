@@ -263,7 +263,8 @@ fun DashboardHeader(userName: String) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(WhitePure),
+                    .background(WhitePure)
+                    .clickable { backStack.add(Routes.NotificationsRoute) },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(painter = painterResource(id = R.drawable.bell_icon), contentDescription = "Notifications", tint = Black, modifier = Modifier.size(20.dp))

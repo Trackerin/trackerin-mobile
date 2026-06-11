@@ -22,6 +22,8 @@ import com.example.trackerinmobile.data.model.note.NoteResponse
 import com.example.trackerinmobile.data.model.note.SingleNoteResponse
 import com.example.trackerinmobile.data.model.note.CreateNoteRequest
 import com.example.trackerinmobile.data.model.note.UpdateNoteRequest
+import com.example.trackerinmobile.data.model.notification.NotificationListResponse
+import com.example.trackerinmobile.data.model.notification.NotificationItemResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -96,4 +98,11 @@ interface ApiService {
     // --- Contact Us Endpoint ---
     @POST("contact")
     suspend fun sendContactMessage(@Body request: ContactRequest): MessageResponse
+
+    // --- Notifications Endpoints ---
+    @GET("notifications")
+    suspend fun getNotifications(): NotificationListResponse
+
+    @PUT("notifications/{id}/read")
+    suspend fun markNotificationAsRead(@Path("id") id: Int): NotificationItemResponse
 }

@@ -1,5 +1,6 @@
 package com.example.trackerinmobile.ui.screens.dashboard
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,9 +25,13 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.trackerinmobile.R
 import com.example.trackerinmobile.core.LocalBackStack
+import java.util.Locale
+import java.text.SimpleDateFormat
+import java.util.Date
 import com.example.trackerinmobile.core.Routes
 import com.example.trackerinmobile.core.Todo
 import com.example.trackerinmobile.core.TodoViewModel
+import com.example.trackerinmobile.data.local.TokenManager
 import com.example.trackerinmobile.ui.components.CustomBottomNavigation
 import com.example.trackerinmobile.ui.screens.auth.AuthViewModel
 import com.example.trackerinmobile.ui.theme.*
@@ -45,7 +51,21 @@ fun DashboardScreen() {
     var todoInputDesc by remember { mutableStateOf("") }
     var todoInputDue by remember { mutableStateOf("") }
 
+    val activeTitle by viewModel.curriculumTitle.collectAsState()
+    val activeProgress by viewModel.curriculumProgress.collectAsState()
+    val activeId by viewModel.curriculumId.collectAsState()
+
+    val topicsCompleted by viewModel.topicsCompleted.collectAsState()
+    val totalHours by viewModel.totalHours.collectAsState()
+    val daysActive by viewModel.daysActive.collectAsState()
+    val dailyAverage by viewModel.dailyAverage.collectAsState()
+    val selectedFilter by viewModel.selectedFilter.collectAsState()
+
     val backStack = LocalBackStack.current
+
+    LaunchedEffect(Unit) {
+        viewModel.loadData()
+    }
 
     Scaffold(
         bottomBar = {
@@ -72,9 +92,19 @@ fun DashboardScreen() {
             Spacer(modifier = Modifier.height(24.dp))
             DashboardHeader(userName)
             Spacer(modifier = Modifier.height(20.dp))
-            StreakWidget()
+            StreakWidget(streak = viewModel.tokenManager.getCurrentStreak())
             Spacer(modifier = Modifier.height(20.dp))
-            ActiveCourseWidget()
+            ActiveCourseWidget(
+                title = activeTitle,
+                progress = activeProgress,
+                onClick = {
+                    activeId?.let { id ->
+                        backStack.add(Routes.CurriculumDetailRoute(curriculumId = id))
+                    } ?: run {
+                        backStack.add(Routes.ExploreRoute)
+                    }
+                }
+            )
             Spacer(modifier = Modifier.height(16.dp))
             TasksWidget(
                 todos = todos,
@@ -95,13 +125,30 @@ fun DashboardScreen() {
                 }
             )
             Spacer(modifier = Modifier.height(16.dp))
-            ActionButtonsRow()
+            ActionButtonsRow(
+                onClickContinue = {
+                    activeId?.let { id ->
+                        backStack.add(Routes.CurriculumDetailRoute(curriculumId = id))
+                    } ?: run {
+                        backStack.add(Routes.ExploreRoute)
+                    }
+                }
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            CreateRoadmapWidget()
+            CreateRoadmapWidget(
+                onClick = { backStack.add(Routes.ExploreRoute) }
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            ProgressOverviewWidget()
+            ProgressOverviewWidget(
+                totalHours = totalHours,
+                topicsCompleted = topicsCompleted,
+                daysActive = daysActive,
+                dailyAverage = dailyAverage,
+                selectedFilter = selectedFilter,
+                onFilterSelected = { filter -> viewModel.setFilter(filter) }
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            WeeklyProgressChartWidget()
+            WeeklyProgressChartWidget(tokenManager = viewModel.tokenManager)
             Spacer(modifier = Modifier.height(32.dp))
         }
 
@@ -172,27 +219,23 @@ fun DashboardScreen() {
 
 @Composable
 fun DashboardHeader(userName: String) {
+    val backStack = LocalBackStack.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Temporary Hardcoded Profile Picture (Placeholder)
-            Box(
+            // User Profile Picture instead of Initials
+            Image(
+                painter = painterResource(id = R.drawable.temporary_profile),
+                contentDescription = "Profile Picture",
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(PrimaryBlue),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = userName.take(1).uppercase(),
-                    color = WhitePure,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
-            }
+                    .border(1.dp, ComponentGray.copy(alpha = 0.3f), CircleShape),
+                contentScale = ContentScale.Crop
+            )
 
             Spacer(modifier = Modifier.width(12.dp))
 
@@ -209,17 +252,19 @@ fun DashboardHeader(userName: String) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(BlackishBlue),
+                    .background(BlackishBlue)
+                    .clickable { backStack.add(Routes.NotesRoute) },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(painter = painterResource(id = R.drawable.plus_icon), contentDescription = "Add", tint = WhitePure, modifier = Modifier.size(20.dp))
+                Icon(painter = painterResource(id = R.drawable.plus_icon), contentDescription = "Add Notes", tint = WhitePure, modifier = Modifier.size(20.dp))
             }
             Spacer(modifier = Modifier.width(8.dp))
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(WhitePure),
+                    .background(WhitePure)
+                    .clickable { backStack.add(Routes.NotificationsRoute) },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(painter = painterResource(id = R.drawable.bell_icon), contentDescription = "Notifications", tint = Black, modifier = Modifier.size(20.dp))
@@ -229,7 +274,7 @@ fun DashboardHeader(userName: String) {
 }
 
 @Composable
-fun StreakWidget() {
+fun StreakWidget(streak: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -247,7 +292,7 @@ fun StreakWidget() {
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "14 Days Streak",
+                text = "$streak Days Streak",
                 color = PrimaryBlue,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
@@ -257,12 +302,13 @@ fun StreakWidget() {
 }
 
 @Composable
-fun ActiveCourseWidget() {
+fun ActiveCourseWidget(title: String, progress: Int, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(PrimaryBlue)
+            .clickable { onClick() }
             .padding(20.dp)
     ) {
         Column {
@@ -272,7 +318,7 @@ fun ActiveCourseWidget() {
                 verticalAlignment = Alignment.Top
             ) {
                 Text(
-                    text = "Fullstack Web Development",
+                    text = title,
                     color = WhitePure,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
@@ -298,7 +344,7 @@ fun ActiveCourseWidget() {
 
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = "74",
+                    text = "$progress",
                     color = WhitePure,
                     fontSize = 36.sp,
                     fontWeight = FontWeight.Bold
@@ -400,11 +446,11 @@ fun TaskItem(todo: Todo, onToggleComplete: () -> Unit, onClick: () -> Unit) {
 }
 
 @Composable
-fun ActionButtonsRow() {
+fun ActionButtonsRow(onClickContinue: () -> Unit) {
     val backStack = LocalBackStack.current
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Button(
-            onClick = { /*TODO*/ },
+            onClick = onClickContinue,
             modifier = Modifier
                 .weight(1f)
                 .height(60.dp),
@@ -429,13 +475,14 @@ fun ActionButtonsRow() {
 }
 
 @Composable
-fun CreateRoadmapWidget() {
+fun CreateRoadmapWidget(onClick: () -> Unit) {
     // Customization: Disesuaikan agar lebih serasi, tanpa icon bintang
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, ComponentGray.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
             .background(WhitePure, RoundedCornerShape(16.dp))
+            .clickable { onClick() }
             .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -466,7 +513,14 @@ fun CreateRoadmapWidget() {
 }
 
 @Composable
-fun ProgressOverviewWidget() {
+fun ProgressOverviewWidget(
+    totalHours: Double,
+    topicsCompleted: Int,
+    daysActive: Int,
+    dailyAverage: Double,
+    selectedFilter: String,
+    onFilterSelected: (String) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -486,7 +540,7 @@ fun ProgressOverviewWidget() {
                 color = Black
             )
 
-            // Customized Segmented Button untuk Weekly/Monthly agar lebih serasi
+            // Customized Segmented Button untuk Weekly/Monthly agar lebih serasi dan interactive
             Row(
                 modifier = Modifier
                     .background(BackgroundApp, RoundedCornerShape(8.dp))
@@ -494,15 +548,19 @@ fun ProgressOverviewWidget() {
             ) {
                 Box(
                     modifier = Modifier
-                        .background(WhitePure, RoundedCornerShape(6.dp))
+                        .background(if (selectedFilter == "Weekly") WhitePure else Color.Transparent, RoundedCornerShape(6.dp))
+                        .clickable { onFilterSelected("Weekly") }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Text("Weekly", fontSize = 12.sp, color = PrimaryBlue, fontWeight = FontWeight.Bold)
+                    Text("Weekly", fontSize = 12.sp, color = if (selectedFilter == "Weekly") PrimaryBlue else TextGray, fontWeight = if (selectedFilter == "Weekly") FontWeight.Bold else FontWeight.Medium)
                 }
                 Box(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    modifier = Modifier
+                        .background(if (selectedFilter == "Monthly") WhitePure else Color.Transparent, RoundedCornerShape(6.dp))
+                        .clickable { onFilterSelected("Monthly") }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Text("Monthly", fontSize = 12.sp, color = TextGray, fontWeight = FontWeight.Medium)
+                    Text("Monthly", fontSize = 12.sp, color = if (selectedFilter == "Monthly") PrimaryBlue else TextGray, fontWeight = if (selectedFilter == "Monthly") FontWeight.Bold else FontWeight.Medium)
                 }
             }
         }
@@ -513,7 +571,7 @@ fun ProgressOverviewWidget() {
             Column(modifier = Modifier.weight(1f)) {
                 Text("Total Hours", fontSize = 14.sp, color = Black)
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("61.5", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Black)
+                    Text(String.format(Locale.US, "%.1f", totalHours), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Black)
                     Text(" h", fontSize = 16.sp, color = Black, modifier = Modifier.padding(bottom = 4.dp))
                 }
 
@@ -521,26 +579,26 @@ fun ProgressOverviewWidget() {
 
                 Text("Daily Average", fontSize = 14.sp, color = Black)
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("4.1", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Black)
+                    Text(String.format(Locale.US, "%.1f", dailyAverage), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Black)
                     Text(" h", fontSize = 16.sp, color = Black, modifier = Modifier.padding(bottom = 4.dp))
                 }
             }
 
             Column(modifier = Modifier.weight(1f)) {
                 Text("Topics Completed", fontSize = 14.sp, color = Black)
-                Text("15", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Black)
+                Text("$topicsCompleted", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Black)
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text("Days Active", fontSize = 14.sp, color = Black)
-                Text("4", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Black)
+                Text("$daysActive", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Black)
             }
         }
     }
 }
 
 @Composable
-fun WeeklyProgressChartWidget() {
+fun WeeklyProgressChartWidget(tokenManager: TokenManager) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -557,7 +615,18 @@ fun WeeklyProgressChartWidget() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Mock Chart
+        // Get actual values from TokenManager
+        val monVal = tokenManager.getDailyActivity("MON")
+        val tueVal = tokenManager.getDailyActivity("TUE")
+        val wedVal = tokenManager.getDailyActivity("WED")
+        val thuVal = tokenManager.getDailyActivity("THU")
+        val friVal = tokenManager.getDailyActivity("FRI")
+        val satVal = tokenManager.getDailyActivity("SAT")
+        val sunVal = tokenManager.getDailyActivity("SUN")
+
+        // Find current day of the week to highlight it
+        val currentDay = SimpleDateFormat("EEE", Locale.US).format(Date()).uppercase()
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -567,13 +636,13 @@ fun WeeklyProgressChartWidget() {
         ) {
             val chartLightBlue = Color(0xFFAAC4FF)
 
-            ChartBar(day = "M", height = 70f, color = chartLightBlue)
-            ChartBar(day = "T", height = 65f, color = chartLightBlue)
-            ChartBar(day = "W", height = 30f, color = chartLightBlue)
-            ChartBar(day = "T", height = 60f, color = chartLightBlue)
-            ChartBar(day = "F", height = 100f, color = PrimaryBlue) // Active Day
-            ChartBar(day = "S", height = 50f, color = chartLightBlue)
-            ChartBar(day = "S", height = 10f, color = chartLightBlue)
+            ChartBar(day = "M", height = monVal, color = if (currentDay == "MON") PrimaryBlue else chartLightBlue)
+            ChartBar(day = "T", height = tueVal, color = if (currentDay == "TUE") PrimaryBlue else chartLightBlue)
+            ChartBar(day = "W", height = wedVal, color = if (currentDay == "WED") PrimaryBlue else chartLightBlue)
+            ChartBar(day = "T", height = thuVal, color = if (currentDay == "THU") PrimaryBlue else chartLightBlue)
+            ChartBar(day = "F", height = friVal, color = if (currentDay == "FRI") PrimaryBlue else chartLightBlue)
+            ChartBar(day = "S", height = satVal, color = if (currentDay == "SAT") PrimaryBlue else chartLightBlue)
+            ChartBar(day = "S", height = sunVal, color = if (currentDay == "SUN") PrimaryBlue else chartLightBlue)
         }
     }
 }

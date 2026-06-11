@@ -11,10 +11,19 @@ import com.example.trackerinmobile.ui.theme.TrackerinMobileTheme
 import com.example.trackerinmobile.ui.screens.splash.SplashScreen
 import com.example.trackerinmobile.ui.screens.login.LoginScreen
 import com.example.trackerinmobile.ui.screens.register.RegisterScreen
+import com.example.trackerinmobile.ui.screens.register.RegisterOtpScreen
+import com.example.trackerinmobile.ui.screens.forgotpassword.ForgotPasswordScreen
+import com.example.trackerinmobile.ui.screens.resetpassword.ResetPasswordScreen
 import com.example.trackerinmobile.ui.screens.dashboard.DashboardScreen
 import com.example.trackerinmobile.ui.screens.explore.ExploreScreen
 import com.example.trackerinmobile.ui.screens.progress.ProgressScreen
 import com.example.trackerinmobile.ui.screens.profile.ProfileScreen
+import com.example.trackerinmobile.ui.screens.notes.NotesScreen
+import com.example.trackerinmobile.ui.screens.progress.CurriculumDetailScreen
+import com.example.trackerinmobile.ui.screens.progress.QuizScreen
+import com.example.trackerinmobile.ui.screens.profile.EditProfileScreen
+import com.example.trackerinmobile.ui.screens.notes.NoteDetailScreen
+import com.example.trackerinmobile.ui.screens.notifications.NotificationsScreen
 
 @Composable
 fun ComposeApp() {
@@ -32,10 +41,36 @@ fun ComposeApp() {
                     entry<Routes.SplashRoute> { SplashScreen() }
                     entry<Routes.LoginRoute> { LoginScreen() }
                     entry<Routes.RegisterRoute> { RegisterScreen() }
+                    entry<Routes.RegisterOtpRoute> { key ->
+                        RegisterOtpScreen(
+                            name = key.name,
+                            email = key.email,
+                            password = key.password
+                        )
+                    }
+                    entry<Routes.ForgotPasswordRoute> { ForgotPasswordScreen() }
+                    entry<Routes.ResetPasswordRoute> { key ->
+                        ResetPasswordScreen(
+                            email = key.email
+                        )
+                    }
                     entry<Routes.DashboardRoute> { DashboardScreen() }
                     entry<Routes.ExploreRoute> { ExploreScreen() }
                     entry<Routes.ProgressRoute> { ProgressScreen() }
                     entry<Routes.ProfileRoute> { ProfileScreen() }
+                    entry<Routes.NotesRoute> { NotesScreen() }
+                    entry<Routes.CurriculumDetailRoute> { key ->
+                        CurriculumDetailScreen(curriculumId = key.curriculumId)
+                    }
+                    entry<Routes.QuizRoute> { key ->
+                        QuizScreen(
+                            milestoneId = key.milestoneId,
+                            isMilestoneCompleted = key.isCompleted
+                        )
+                    }
+                    entry<Routes.EditProfileRoute> { EditProfileScreen() }
+                    entry<Routes.NoteDetailRoute> { key -> NoteDetailScreen(noteId = key.noteId) }
+                    entry<Routes.NotificationsRoute> { NotificationsScreen() }
                 }
             )
         }

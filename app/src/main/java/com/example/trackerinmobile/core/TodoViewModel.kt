@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.UUID
 import com.example.trackerinmobile.data.network.ApiService
+import com.example.trackerinmobile.data.local.TokenManager
 import com.example.trackerinmobile.data.model.progress.TodoRequest
 import com.example.trackerinmobile.data.model.progress.TodoApiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,15 +23,70 @@ data class Todo(
 )
 
 @HiltViewModel
-class TodoViewModel @Inject constructor(private val apiService: ApiService) : ViewModel() {
+class TodoViewModel @Inject constructor(
+    private val apiService: ApiService,
+    val tokenManager: TokenManager
+) : ViewModel() {
     private val _todos = MutableStateFlow<List<Todo>>(emptyList())
     val todos: StateFlow<List<Todo>> = _todos.asStateFlow()
     private val _curriculumProgress = MutableStateFlow(0)
     val curriculumProgress: StateFlow<Int> = _curriculumProgress.asStateFlow()
     private val _curriculumTitle = MutableStateFlow("-")
     val curriculumTitle: StateFlow<String> = _curriculumTitle.asStateFlow()
+    
+    private val _curriculumId = MutableStateFlow<Int?>(null)
+    val curriculumId: StateFlow<Int?> = _curriculumId.asStateFlow()
+
+    private val _topicsCompleted = MutableStateFlow(0)
+    val topicsCompleted: StateFlow<Int> = _topicsCompleted.asStateFlow()
+
+    private val _totalHours = MutableStateFlow(0.0)
+    val totalHours: StateFlow<Double> = _totalHours.asStateFlow()
+
+    private val _daysActive = MutableStateFlow(1)
+    val daysActive: StateFlow<Int> = _daysActive.asStateFlow()
+
+    private val _dailyAverage = MutableStateFlow(0.0)
+    val dailyAverage: StateFlow<Double> = _dailyAverage.asStateFlow()
+
+    private val _completedRoadmapsCount = MutableStateFlow(0)
+    val completedRoadmapsCount: StateFlow<Int> = _completedRoadmapsCount.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _selectedFilter = MutableStateFlow("Weekly")
+    val selectedFilter: StateFlow<String> = _selectedFilter.asStateFlow()
+
+    private var monthlyHours = 0.0
+    private var monthlyTopics = 0
+    private var monthlyDays = 1
+    private var monthlyAverage = 0.0
+
+    private var weeklyHours = 0.0
+    private var weeklyTopics = 0
+    private var weeklyDays = 0
+    private var weeklyAverage = 0.0
+
+    fun setFilter(filter: String) {
+        _selectedFilter.value = filter
+        updateDisplayStats()
+    }
+
+    private fun updateDisplayStats() {
+        if (_selectedFilter.value == "Weekly") {
+            _totalHours.value = weeklyHours
+            _topicsCompleted.value = weeklyTopics
+            _daysActive.value = weeklyDays
+            _dailyAverage.value = weeklyAverage
+        } else {
+            _totalHours.value = monthlyHours
+            _topicsCompleted.value = monthlyTopics
+            _daysActive.value = monthlyDays
+            _dailyAverage.value = monthlyAverage
+        }
+    }
+
     init {
         loadData()
     }
@@ -40,15 +96,75 @@ class TodoViewModel @Inject constructor(private val apiService: ApiService) : Vi
             try {
                 // Fetch Curriculums
                 val curriculumsResponse = apiService.getCurriculums()
-                val activeCurriculum = curriculumsResponse.data?.firstOrNull()
+                val curriculums = curriculumsResponse.data ?: emptyList()
+                val activeCurriculum = curriculums.firstOrNull { (it.totalProgress ?: 0.0) < 100.0 }
+                
                 if (activeCurriculum != null) {
+                    _curriculumId.value = activeCurriculum.id
                     _curriculumTitle.value = activeCurriculum.topic
-                    _curriculumProgress.value = activeCurriculum.totalProgress ?: 0
+                    _curriculumProgress.value = activeCurriculum.totalProgress?.toInt() ?: 0
+                } else {
+                    val latest = curriculums.firstOrNull()
+                    if (latest != null) {
+                        _curriculumId.value = latest.id
+                        _curriculumTitle.value = latest.topic
+                        _curriculumProgress.value = latest.totalProgress?.toInt() ?: 0
+                    } else {
+                        _curriculumId.value = null
+                        _curriculumTitle.value = "No Active Path"
+                        _curriculumProgress.value = 0
+                    }
                 }
+
+                // Compute Stats
+                val estimatedCompletedMilestones = curriculums.sumOf { 
+                    (((it.totalProgress ?: 0.0) / 100.0) * 6.0).toInt() 
+                }
+
                 // Fetch Todos
                 val todosResponse = apiService.getTodos()
                 val parsedTodos = todosResponse.data?.map { parseTodo(it) } ?: emptyList()
                 _todos.value = parsedTodos
+
+                val completedTasks = parsedTodos.count { it.isCompleted }
+
+                // Track active days and streak
+                tokenManager.updateStreakAndActiveDays()
+
+                val activeDays = tokenManager.getActiveDaysCount()
+                val hours = (estimatedCompletedMilestones * 2.0) + (completedTasks * 0.5)
+                val average = if (activeDays > 0) hours / activeDays else hours
+                val completedCount = curriculums.count { (it.totalProgress ?: 0.0) >= 100.0 }
+
+                // Monthly values (overall stats)
+                monthlyHours = hours
+                monthlyTopics = estimatedCompletedMilestones
+                monthlyDays = activeDays
+                monthlyAverage = average
+
+                // Weekly values (computed dynamically from the recorded daily weekday activities)
+                val weekdays = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
+                var wHours = 0.0
+                var wDays = 0
+                var wTopics = 0
+                for (day in weekdays) {
+                    val act = tokenManager.getDailyActivity(day)
+                    if (act > 0f) {
+                        wDays++
+                        wHours += act * 0.05
+                        if (act >= 40f) {
+                            wTopics += (act / 40f).toInt()
+                        }
+                    }
+                }
+                weeklyHours = wHours
+                weeklyDays = wDays
+                weeklyTopics = wTopics
+                weeklyAverage = if (wDays > 0) wHours / wDays else 0.0
+
+                _completedRoadmapsCount.value = completedCount
+                updateDisplayStats()
+
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
@@ -102,6 +218,9 @@ class TodoViewModel @Inject constructor(private val apiService: ApiService) : Vi
             // Optimistic update
             current[index] = todo.copy(isCompleted = newStatus)
             _todos.value = current
+            if (newStatus) {
+                tokenManager.incrementDailyActivity(20f)
+            }
             viewModelScope.launch {
                 try {
                     val taskString = formatTask(todo.title, todo.description, todo.dueDate)

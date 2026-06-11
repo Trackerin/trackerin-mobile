@@ -23,12 +23,26 @@ import com.example.trackerinmobile.core.Routes
 import com.example.trackerinmobile.ui.components.CustomBottomNavigation
 import com.example.trackerinmobile.ui.theme.*
 
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.trackerinmobile.ui.screens.progress.CurriculumViewModel
+
 @Composable
 fun ExploreScreen() {
     val backStack = LocalBackStack.current
+    val curriculumViewModel: CurriculumViewModel = hiltViewModel()
+    val isLoading by curriculumViewModel.isLoading.collectAsState()
+    val error by curriculumViewModel.error.collectAsState()
+    val context = LocalContext.current
+
     var searchQuery by remember { mutableStateOf("") }
-    val recentSearches = remember { mutableStateListOf("Python Crash Course", "Agile Methodologies", "Figma Prototyping") }
-    var showNotFoundDialog by remember { mutableStateOf(false) }
+    val recentSearches = remember {
+        mutableStateListOf<String>().apply {
+            addAll(curriculumViewModel.tokenManager.getRecentSearches())
+        }
+    }
+    var hasSearchedTopic by remember { mutableStateOf<String?>(null) }
     
     val smartSuggestions = listOf(
         SuggestionItem("Data Science Fundamentals", R.drawable.fire_icon),
@@ -36,6 +50,13 @@ fun ExploreScreen() {
         SuggestionItem("Machine Learning Models", R.drawable.book_icon),
         SuggestionItem("Advanced React Patterns", R.drawable.search_icon),
     )
+
+    LaunchedEffect(error) {
+        error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            curriculumViewModel.clearError()
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -96,16 +117,10 @@ fun ExploreScreen() {
                 Button(
                     onClick = { 
                         if (searchQuery.isNotBlank()) {
-                            // Simulasi pencarian: Jika query tidak ada di suggestion atau recent, tampilkan not found
-                            val allPossibleTopics = (recentSearches + smartSuggestions.map { it.text }).map { it.lowercase() }
-                            
-                            if (allPossibleTopics.any { it.contains(searchQuery.lowercase()) }) {
-                                if (!recentSearches.contains(searchQuery)) {
-                                    recentSearches.add(0, searchQuery)
-                                }
-                            } else {
-                                showNotFoundDialog = true
-                            }
+                            hasSearchedTopic = searchQuery
+                            curriculumViewModel.tokenManager.saveRecentSearch(searchQuery)
+                            recentSearches.clear()
+                            recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
                         }
                     },
                     shape = RoundedCornerShape(8.dp),
@@ -119,22 +134,107 @@ fun ExploreScreen() {
                 }
             }
 
+            // AI Roadmap Generator Card
+            if (hasSearchedTopic != null && hasSearchedTopic!!.isNotBlank()) {
+                Spacer(modifier = Modifier.height(24.dp))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, PrimaryBlue.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = WhitePure)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "AI Roadmap Generator",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryBlue
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Ready to generate a personalized learning roadmap for:",
+                            fontSize = 13.sp,
+                            color = TextGray
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "\"${hasSearchedTopic}\"",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Black
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Button(
+                            onClick = {
+                                val topic = hasSearchedTopic!!
+                                curriculumViewModel.generateCurriculum(topic) { generatedId ->
+                                    curriculumViewModel.tokenManager.saveRecentSearch(topic)
+                                    recentSearches.clear()
+                                    recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
+                                    hasSearchedTopic = null
+                                    searchQuery = ""
+                                    backStack.add(Routes.CurriculumDetailRoute(generatedId))
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                            enabled = !isLoading
+                        ) {
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = WhitePure,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Generating Roadmap...", fontSize = 14.sp)
+                            } else {
+                                Text("Generate Learning Path", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
 
-            Text(
-                text = "Recent Search",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Black,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Recent Search",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Black
+                )
+                if (recentSearches.isNotEmpty()) {
+                    Text(
+                        text = "Clear All",
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clickable {
+                                curriculumViewModel.tokenManager.clearRecentSearches()
+                                recentSearches.clear()
+                            }
+                            .padding(4.dp)
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 recentSearches.take(3).forEach { search ->
                     RecentSearchItem(text = search) {
                         searchQuery = search
+                        hasSearchedTopic = search
                     }
                 }
             }
@@ -156,43 +256,43 @@ fun ExploreScreen() {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                SuggestionChip(smartSuggestions[0]) { searchQuery = smartSuggestions[0].text }
+                SuggestionChip(smartSuggestions[0]) {
+                    val topic = smartSuggestions[0].text
+                    searchQuery = topic
+                    hasSearchedTopic = topic
+                    curriculumViewModel.tokenManager.saveRecentSearch(topic)
+                    recentSearches.clear()
+                    recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
+                }
                 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
-                    SuggestionChip(smartSuggestions[1]) { searchQuery = smartSuggestions[1].text }
-                    SuggestionChip(smartSuggestions[2]) { searchQuery = smartSuggestions[2].text }
+                    SuggestionChip(smartSuggestions[1]) {
+                        val topic = smartSuggestions[1].text
+                        searchQuery = topic
+                        hasSearchedTopic = topic
+                        curriculumViewModel.tokenManager.saveRecentSearch(topic)
+                        recentSearches.clear()
+                        recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
+                    }
+                    SuggestionChip(smartSuggestions[2]) {
+                        val topic = smartSuggestions[2].text
+                        searchQuery = topic
+                        hasSearchedTopic = topic
+                        curriculumViewModel.tokenManager.saveRecentSearch(topic)
+                        recentSearches.clear()
+                        recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
+                    }
                 }
 
-                SuggestionChip(smartSuggestions[3]) { searchQuery = smartSuggestions[3].text }
+                SuggestionChip(smartSuggestions[3]) {
+                    val topic = smartSuggestions[3].text
+                    searchQuery = topic
+                    hasSearchedTopic = topic
+                    curriculumViewModel.tokenManager.saveRecentSearch(topic)
+                    recentSearches.clear()
+                    recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
+                }
             }
-        }
-
-        if (showNotFoundDialog) {
-            AlertDialog(
-                onDismissRequest = { showNotFoundDialog = false },
-                title = { 
-                    Text(
-                        text = "Result Not Found",
-                        fontWeight = FontWeight.Bold,
-                        color = Black
-                    )
-                },
-                text = {
-                    Text(
-                        text = "Sorry, we couldn't find any learning paths for \"$searchQuery\". Try searching for other topics like 'UI Design' or 'Kotlin'.",
-                        color = TextGray
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = { showNotFoundDialog = false }
-                    ) {
-                        Text("Try Again", color = PrimaryBlue, fontWeight = FontWeight.Bold)
-                    }
-                },
-                shape = RoundedCornerShape(16.dp),
-                containerColor = WhitePure
-            )
         }
     }
 }

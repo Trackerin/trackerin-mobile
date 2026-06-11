@@ -15,6 +15,35 @@ object Routes {
     data object RegisterRoute : NavKey
 
     @Serializable
+    data class RegisterOtpRoute(
+        val name: String,
+        val email: String,
+        val password: String
+    ) : NavKey
+
+    @Serializable
+    data object ForgotPasswordRoute : NavKey
+
+    @Serializable
+    data class ResetPasswordRoute(
+        val email: String
+    ) : NavKey
+
+    @Serializable
+    data object NotesRoute : NavKey
+
+    @Serializable
+    data class CurriculumDetailRoute(
+        val curriculumId: Int
+    ) : NavKey
+
+    @Serializable
+    data class QuizRoute(
+        val milestoneId: Int,
+        val isCompleted: Boolean = false
+    ) : NavKey
+
+    @Serializable
     data object DashboardRoute : NavKey
 
     @Serializable
@@ -25,4 +54,15 @@ object Routes {
 
     @Serializable
     data object ProgressRoute : NavKey
+
+    @Serializable
+    data object EditProfileRoute : NavKey
+
+    @Serializable
+    data object NotificationsRoute : NavKey
+
+    @Serializable
+    data class NoteDetailRoute(
+        val noteId: Int? = null
+    ) : NavKey
 }

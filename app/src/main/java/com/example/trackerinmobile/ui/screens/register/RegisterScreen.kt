@@ -97,6 +97,17 @@ fun RegisterScreen() {
                 backStack.clear()
                 backStack.add(Routes.DashboardRoute)
             }
+            is AuthState.RegisterOtpSent -> {
+                Toast.makeText(context, "OTP sent to your email", Toast.LENGTH_SHORT).show()
+                authViewModel.resetState()
+                backStack.add(
+                    Routes.RegisterOtpRoute(
+                        name = fullName,
+                        email = email,
+                        password = password
+                    )
+                )
+            }
             is AuthState.Error -> {
                 Toast.makeText(context, (authState as AuthState.Error).message, Toast.LENGTH_LONG).show()
                 authViewModel.resetState()
@@ -233,15 +244,10 @@ fun RegisterScreen() {
         Button(
             onClick = {
                 if (fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()) {
-                    if (password == confirmPassword) {
-                        authViewModel.register(
-                            RegisterRequest(
-                                name = fullName,
-                                email = email,
-                                password = password,
-                                passwordConfirmation = confirmPassword
-                            )
-                        )
+                    if (password.length < 8) {
+                        Toast.makeText(context, "Password must be at least 8 characters", Toast.LENGTH_SHORT).show()
+                    } else if (password == confirmPassword) {
+                        authViewModel.sendRegisterOtp(email)
                     } else {
                         Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                     }

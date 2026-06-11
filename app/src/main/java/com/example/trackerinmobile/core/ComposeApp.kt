@@ -21,6 +21,7 @@ import com.example.trackerinmobile.ui.screens.profile.ProfileScreen
 import com.example.trackerinmobile.ui.screens.notes.NotesScreen
 import com.example.trackerinmobile.ui.screens.progress.CurriculumDetailScreen
 import com.example.trackerinmobile.ui.screens.progress.QuizScreen
+import com.example.trackerinmobile.ui.screens.profile.EditProfileScreen
 
 @Composable
 fun ComposeApp() {
@@ -62,6 +63,7 @@ fun ComposeApp() {
                     entry<Routes.QuizRoute> { key ->
                         QuizScreen(milestoneId = key.milestoneId)
                     }
+                    entry<Routes.EditProfileRoute> { EditProfileScreen() }
                 }
             )
         }

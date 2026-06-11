@@ -213,14 +213,29 @@ class TokenManager(context: Context) {
             else -> 0f
         }
     }
+    fun saveEmail(email: String) {
+        sharedPreferences.edit().putString(KEY_EMAIL, email).apply()
+    }
 
+    fun getEmail(): String? {
+        return sharedPreferences.getString(KEY_EMAIL, "user@example.com")
+    }
 
+    fun savePassword(password: String) {
+        sharedPreferences.edit().putString(KEY_PASSWORD, password).apply()
+    }
+
+    fun getPassword(): String? {
+        return sharedPreferences.getString(KEY_PASSWORD, "password123")
+    }
 
     companion object {
         private const val KEY_TOKEN = "jwt_token"
         private const val KEY_USER_NAME = "user_name"
         private const val KEY_OCCUPATION = "user_occupation"
         private const val KEY_SPECIALIZATION = "user_specialization"
+        private const val KEY_EMAIL = "user_email"
+        private const val KEY_PASSWORD = "user_password"
     }
 }
 

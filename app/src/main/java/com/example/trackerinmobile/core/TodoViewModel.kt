@@ -54,6 +54,39 @@ class TodoViewModel @Inject constructor(
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _selectedFilter = MutableStateFlow("Weekly")
+    val selectedFilter: StateFlow<String> = _selectedFilter.asStateFlow()
+
+    private var monthlyHours = 0.0
+    private var monthlyTopics = 0
+    private var monthlyDays = 1
+    private var monthlyAverage = 0.0
+
+    private var weeklyHours = 0.0
+    private var weeklyTopics = 0
+    private var weeklyDays = 0
+    private var weeklyAverage = 0.0
+
+    fun setFilter(filter: String) {
+        _selectedFilter.value = filter
+        updateDisplayStats()
+    }
+
+    private fun updateDisplayStats() {
+        if (_selectedFilter.value == "Weekly") {
+            _totalHours.value = weeklyHours
+            _topicsCompleted.value = weeklyTopics
+            _daysActive.value = weeklyDays
+            _dailyAverage.value = weeklyAverage
+        } else {
+            _totalHours.value = monthlyHours
+            _topicsCompleted.value = monthlyTopics
+            _daysActive.value = monthlyDays
+            _dailyAverage.value = monthlyAverage
+        }
+    }
+
     init {
         loadData()
     }
@@ -103,11 +136,34 @@ class TodoViewModel @Inject constructor(
                 val average = if (activeDays > 0) hours / activeDays else hours
                 val completedCount = curriculums.count { (it.totalProgress ?: 0.0) >= 100.0 }
 
-                _topicsCompleted.value = estimatedCompletedMilestones
-                _totalHours.value = hours
-                _daysActive.value = activeDays
-                _dailyAverage.value = average
+                // Monthly values (overall stats)
+                monthlyHours = hours
+                monthlyTopics = estimatedCompletedMilestones
+                monthlyDays = activeDays
+                monthlyAverage = average
+
+                // Weekly values (computed dynamically from the recorded daily weekday activities)
+                val weekdays = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
+                var wHours = 0.0
+                var wDays = 0
+                var wTopics = 0
+                for (day in weekdays) {
+                    val act = tokenManager.getDailyActivity(day)
+                    if (act > 0f) {
+                        wDays++
+                        wHours += act * 0.05
+                        if (act >= 40f) {
+                            wTopics += (act / 40f).toInt()
+                        }
+                    }
+                }
+                weeklyHours = wHours
+                weeklyDays = wDays
+                weeklyTopics = wTopics
+                weeklyAverage = if (wDays > 0) wHours / wDays else 0.0
+
                 _completedRoadmapsCount.value = completedCount
+                updateDisplayStats()
 
             } catch (e: Exception) {
                 e.printStackTrace()

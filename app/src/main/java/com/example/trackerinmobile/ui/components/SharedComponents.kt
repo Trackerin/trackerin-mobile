@@ -19,14 +19,14 @@ import com.example.trackerinmobile.ui.theme.WhitePure
 
 @Composable
 fun CustomBottomNavigation(activeTab: Int = 0, onTabSelected: (Int) -> Unit) {
-    Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp)) {
+    Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(50.dp))
                 .background(BlackishBlue)
-                .padding(vertical = 14.dp, horizontal = 28.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(vertical = 10.dp, horizontal = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Home

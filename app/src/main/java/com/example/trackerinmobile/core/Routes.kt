@@ -53,4 +53,7 @@ object Routes {
 
     @Serializable
     data object ProgressRoute : NavKey
+
+    @Serializable
+    data object EditProfileRoute : NavKey
 }

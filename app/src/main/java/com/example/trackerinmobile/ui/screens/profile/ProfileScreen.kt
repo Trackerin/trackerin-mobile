@@ -54,15 +54,10 @@ fun ProfileScreen() {
     val currentStreak = remember { authViewModel.tokenManager.getCurrentStreak() }
 
     // Profile Data State
-    val savedName = remember { authViewModel.tokenManager.getUserName() ?: "User" }
-    val savedOccupation = remember { authViewModel.tokenManager.getOccupation() ?: "College Student, 4th Semester" }
-    val savedSpecialization = remember { authViewModel.tokenManager.getSpecialization() ?: "Fullstack Developer" }
+    val name = authViewModel.tokenManager.getUserName() ?: "User"
+    val occupation = authViewModel.tokenManager.getOccupation() ?: "College Student, 4th Semester"
+    val specialization = authViewModel.tokenManager.getSpecialization() ?: "Fullstack Developer"
     
-    var name by remember { mutableStateOf(savedName) }
-    var occupation by remember { mutableStateOf(savedOccupation) }
-    var specialization by remember { mutableStateOf(savedSpecialization) }
-    
-    var showEditDialog by remember { mutableStateOf(false) }
     var showContactDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(authState) {
@@ -133,7 +128,7 @@ fun ProfileScreen() {
 
             // Edit Profile Button
             Button(
-                onClick = { showEditDialog = true },
+                onClick = { backStack.add(Routes.EditProfileRoute) },
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.height(36.dp),
@@ -225,59 +220,6 @@ fun ProfileScreen() {
             Spacer(modifier = Modifier.height(40.dp))
         }
 
-        if (showEditDialog) {
-            var tempName by remember { mutableStateOf(name) }
-            var tempOccupation by remember { mutableStateOf(occupation) }
-            var tempSpecialization by remember { mutableStateOf(specialization) }
-
-            AlertDialog(
-                onDismissRequest = { showEditDialog = false },
-                title = { Text("Edit Profile") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = tempName,
-                            onValueChange = { tempName = it },
-                            label = { Text("Name") },
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = tempOccupation,
-                            onValueChange = { tempOccupation = it },
-                            label = { Text("Occupation") },
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = tempSpecialization,
-                            onValueChange = { tempSpecialization = it },
-                            label = { Text("Specialization") },
-                            singleLine = true
-                        )
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        name = tempName
-                        occupation = tempOccupation
-                        specialization = tempSpecialization
-                        
-                        // Persist to Data Layer (SharedPreferences)
-                        authViewModel.tokenManager.saveUserName(tempName)
-                        authViewModel.tokenManager.saveOccupation(tempOccupation)
-                        authViewModel.tokenManager.saveSpecialization(tempSpecialization)
-
-                        showEditDialog = false
-                    }) {
-                        Text("Save")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showEditDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
-        }
 
         if (showContactDialog) {
             var contactName by remember { mutableStateOf(name) }

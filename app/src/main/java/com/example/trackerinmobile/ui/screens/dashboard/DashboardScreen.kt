@@ -57,6 +57,7 @@ fun DashboardScreen() {
     val totalHours by viewModel.totalHours.collectAsState()
     val daysActive by viewModel.daysActive.collectAsState()
     val dailyAverage by viewModel.dailyAverage.collectAsState()
+    val selectedFilter by viewModel.selectedFilter.collectAsState()
 
     val backStack = LocalBackStack.current
 
@@ -122,7 +123,15 @@ fun DashboardScreen() {
                 }
             )
             Spacer(modifier = Modifier.height(16.dp))
-            ActionButtonsRow()
+            ActionButtonsRow(
+                onClickContinue = {
+                    activeId?.let { id ->
+                        backStack.add(Routes.CurriculumDetailRoute(curriculumId = id))
+                    } ?: run {
+                        backStack.add(Routes.ExploreRoute)
+                    }
+                }
+            )
             Spacer(modifier = Modifier.height(16.dp))
             CreateRoadmapWidget(
                 onClick = { backStack.add(Routes.ExploreRoute) }
@@ -132,7 +141,9 @@ fun DashboardScreen() {
                 totalHours = totalHours,
                 topicsCompleted = topicsCompleted,
                 daysActive = daysActive,
-                dailyAverage = dailyAverage
+                dailyAverage = dailyAverage,
+                selectedFilter = selectedFilter,
+                onFilterSelected = { filter -> viewModel.setFilter(filter) }
             )
             Spacer(modifier = Modifier.height(16.dp))
             WeeklyProgressChartWidget(tokenManager = viewModel.tokenManager)
@@ -435,11 +446,11 @@ fun TaskItem(todo: Todo, onToggleComplete: () -> Unit, onClick: () -> Unit) {
 }
 
 @Composable
-fun ActionButtonsRow() {
+fun ActionButtonsRow(onClickContinue: () -> Unit) {
     val backStack = LocalBackStack.current
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Button(
-            onClick = { /*TODO*/ },
+            onClick = onClickContinue,
             modifier = Modifier
                 .weight(1f)
                 .height(60.dp),
@@ -506,7 +517,9 @@ fun ProgressOverviewWidget(
     totalHours: Double,
     topicsCompleted: Int,
     daysActive: Int,
-    dailyAverage: Double
+    dailyAverage: Double,
+    selectedFilter: String,
+    onFilterSelected: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -527,7 +540,7 @@ fun ProgressOverviewWidget(
                 color = Black
             )
 
-            // Customized Segmented Button untuk Weekly/Monthly agar lebih serasi
+            // Customized Segmented Button untuk Weekly/Monthly agar lebih serasi dan interactive
             Row(
                 modifier = Modifier
                     .background(BackgroundApp, RoundedCornerShape(8.dp))
@@ -535,15 +548,19 @@ fun ProgressOverviewWidget(
             ) {
                 Box(
                     modifier = Modifier
-                        .background(WhitePure, RoundedCornerShape(6.dp))
+                        .background(if (selectedFilter == "Weekly") WhitePure else Color.Transparent, RoundedCornerShape(6.dp))
+                        .clickable { onFilterSelected("Weekly") }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Text("Weekly", fontSize = 12.sp, color = PrimaryBlue, fontWeight = FontWeight.Bold)
+                    Text("Weekly", fontSize = 12.sp, color = if (selectedFilter == "Weekly") PrimaryBlue else TextGray, fontWeight = if (selectedFilter == "Weekly") FontWeight.Bold else FontWeight.Medium)
                 }
                 Box(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    modifier = Modifier
+                        .background(if (selectedFilter == "Monthly") WhitePure else Color.Transparent, RoundedCornerShape(6.dp))
+                        .clickable { onFilterSelected("Monthly") }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Text("Monthly", fontSize = 12.sp, color = TextGray, fontWeight = FontWeight.Medium)
+                    Text("Monthly", fontSize = 12.sp, color = if (selectedFilter == "Monthly") PrimaryBlue else TextGray, fontWeight = if (selectedFilter == "Monthly") FontWeight.Bold else FontWeight.Medium)
                 }
             }
         }

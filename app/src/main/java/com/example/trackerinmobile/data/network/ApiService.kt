@@ -17,6 +17,7 @@ import com.example.trackerinmobile.data.model.progress.GenerateCurriculumRespons
 import com.example.trackerinmobile.data.model.progress.CompleteMilestoneRequest
 import com.example.trackerinmobile.data.model.progress.CompleteMilestoneResponse
 import com.example.trackerinmobile.data.model.progress.QuizResponse
+import com.example.trackerinmobile.data.model.progress.SubmitQuizRequest
 import com.example.trackerinmobile.data.model.progress.ContactRequest
 import com.example.trackerinmobile.data.model.note.NoteResponse
 import com.example.trackerinmobile.data.model.note.SingleNoteResponse
@@ -97,6 +98,9 @@ interface ApiService {
 
     @POST("milestones/{id}/generate-quiz")
     suspend fun generateQuiz(@Path("id") id: Int): QuizResponse
+
+    @POST("milestones/{id}/quiz/submit")
+    suspend fun submitQuizScore(@Path("id") id: Int, @Body request: SubmitQuizRequest): MessageResponse
 
     // --- Contact Us Endpoint ---
     @POST("contact")

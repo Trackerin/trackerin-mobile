@@ -7,6 +7,7 @@ import com.example.trackerinmobile.data.model.progress.CurriculumDetailApiModel
 import com.example.trackerinmobile.data.model.progress.GenerateCurriculumRequest
 import com.example.trackerinmobile.data.model.progress.CompleteMilestoneRequest
 import com.example.trackerinmobile.data.model.progress.QuizApiModel
+import com.example.trackerinmobile.data.model.progress.SubmitQuizRequest
 import com.example.trackerinmobile.data.network.ApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,8 +32,15 @@ class CurriculumViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    fun setQuizCompleted(milestoneId: Int, isCompleted: Boolean) {
-        tokenManager.setQuizCompleted(milestoneId, isCompleted)
+    fun setQuizCompleted(milestoneId: Int, score: Int) {
+        tokenManager.setQuizCompleted(milestoneId, true)
+        viewModelScope.launch {
+            try {
+                apiService.submitQuizScore(milestoneId, SubmitQuizRequest(score))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun isQuizCompleted(milestoneId: Int): Boolean {

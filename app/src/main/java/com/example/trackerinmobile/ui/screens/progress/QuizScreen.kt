@@ -155,7 +155,7 @@ fun QuizScreen(milestoneId: Int, isMilestoneCompleted: Boolean) {
                 val questions = quiz.questions
                 if (showResults) {
                     // Quiz Review and Scorecard Screen
-                    val score = questions.filterIndexed { index, question ->
+                    val score = quiz.score ?: questions.filterIndexed { index, question ->
                         selectedAnswers[index] == question.answer
                     }.size
 
@@ -475,7 +475,10 @@ fun QuizScreen(milestoneId: Int, isMilestoneCompleted: Boolean) {
                             Button(
                                 onClick = {
                                     if (isLast) {
-                                        viewModel.setQuizCompleted(milestoneId, true)
+                                        val score = questions.filterIndexed { index, question ->
+                                            selectedAnswers[index] == question.answer
+                                        }.size
+                                        viewModel.setQuizCompleted(milestoneId, score)
                                         showResults = true
                                     } else {
                                         currentQuestionIndex++

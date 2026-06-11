@@ -119,7 +119,13 @@ data class QuizApiModel(
     val id: Int,
     @SerialName("milestone_id")
     val milestoneId: Int,
+    val score: Int? = null,
     val questions: List<QuizQuestion> = emptyList()
+)
+
+@Serializable
+data class SubmitQuizRequest(
+    val score: Int
 )
 
 @Serializable

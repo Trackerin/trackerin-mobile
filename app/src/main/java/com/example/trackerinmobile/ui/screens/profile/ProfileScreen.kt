@@ -219,7 +219,7 @@ fun ProfileScreen() {
 
         if (showContactDialog) {
             var contactName by remember { mutableStateOf(name) }
-            var contactEmail by remember { mutableStateOf("") }
+            var contactEmail by remember { mutableStateOf(authViewModel.tokenManager.getEmail() ?: "") }
             var contactSubject by remember { mutableStateOf("") }
             var contactMessage by remember { mutableStateOf("") }
 

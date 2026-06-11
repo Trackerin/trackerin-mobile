@@ -47,16 +47,10 @@ fun EditProfileScreen() {
     val initialName = remember { tokenManager.getUserName() ?: "" }
     val initialOccupation = remember { tokenManager.getOccupation() ?: "" }
     val initialSpecialization = remember { tokenManager.getSpecialization() ?: "" }
-    val initialEmail = remember { tokenManager.getEmail() ?: "" }
-    val initialPassword = remember { tokenManager.getPassword() ?: "" }
 
     var name by remember { mutableStateOf(initialName) }
     var occupation by remember { mutableStateOf(initialOccupation) }
     var specialization by remember { mutableStateOf(initialSpecialization) }
-    var email by remember { mutableStateOf(initialEmail) }
-    var password by remember { mutableStateOf(initialPassword) }
-
-    var passwordVisible by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = BackgroundApp
@@ -174,49 +168,6 @@ fun EditProfileScreen() {
                             unfocusedBorderColor = ComponentGray.copy(alpha = 0.5f)
                         )
                     )
-
-                    // Email Field
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email") },
-                        placeholder = { Text("Enter your email") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = ComponentGray.copy(alpha = 0.5f)
-                        )
-                    )
-
-                    // Password Field
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") },
-                        placeholder = { Text("Enter password") },
-                        singleLine = true,
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        trailingIcon = {
-                            val iconId = if (passwordVisible) R.drawable.eye_open else R.drawable.eye_slash
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(
-                                    painter = painterResource(id = iconId),
-                                    contentDescription = "Toggle password visibility",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = ComponentGray.copy(alpha = 0.5f)
-                        )
-                    )
                 }
             }
 
@@ -225,18 +176,16 @@ fun EditProfileScreen() {
             // Save Button
             Button(
                 onClick = {
-                    if (name.isNotBlank() && email.isNotBlank()) {
+                    if (name.isNotBlank()) {
                         // Persist all data locally to SharedPreferences
                         tokenManager.saveUserName(name.trim())
                         tokenManager.saveOccupation(occupation.trim())
                         tokenManager.saveSpecialization(specialization.trim())
-                        tokenManager.saveEmail(email.trim())
-                        tokenManager.savePassword(password)
 
                         Toast.makeText(context, "Changes saved successfully!", Toast.LENGTH_SHORT).show()
                         backStack.removeLastOrNull()
                     } else {
-                        Toast.makeText(context, "Name and Email cannot be empty!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Name cannot be empty!", Toast.LENGTH_SHORT).show()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),

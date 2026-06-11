@@ -21,10 +21,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.trackerinmobile.R
 import com.example.trackerinmobile.core.LocalBackStack
+import com.example.trackerinmobile.core.Routes
 import com.example.trackerinmobile.data.model.note.NoteApiModel
 import com.example.trackerinmobile.ui.theme.*
 
@@ -39,10 +41,9 @@ fun NotesScreen() {
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
 
-    var showDialog by remember { mutableStateOf(false) }
-    var selectedNote by remember { mutableStateOf<NoteApiModel?>(null) }
-    var titleInput by remember { mutableStateOf("") }
-    var contentInput by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        viewModel.fetchNotes()
+    }
 
     LaunchedEffect(error) {
         error?.let {
@@ -55,10 +56,7 @@ fun NotesScreen() {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    selectedNote = null
-                    titleInput = ""
-                    contentInput = ""
-                    showDialog = true
+                    backStack.add(Routes.NoteDetailRoute(null))
                 },
                 containerColor = PrimaryBlue,
                 contentColor = WhitePure,
@@ -93,10 +91,12 @@ fun NotesScreen() {
                         .background(WhitePure, CircleShape)
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.search_icon), // Fallback search icon as back indicator or close
+                        painter = painterResource(id = R.drawable.arrow_right),
                         contentDescription = "Back",
                         tint = Black,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier
+                            .size(18.dp)
+                            .graphicsLayer(rotationZ = 180f)
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
@@ -146,10 +146,7 @@ fun NotesScreen() {
                         NoteCard(
                             note = note,
                             onClick = {
-                                selectedNote = note
-                                titleInput = note.title
-                                contentInput = note.content
-                                showDialog = true
+                                backStack.add(Routes.NoteDetailRoute(noteId = note.id))
                             }
                         )
                     }
@@ -157,80 +154,6 @@ fun NotesScreen() {
             }
         }
 
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text(if (selectedNote == null) "Tambah Catatan" else "Detail Catatan") },
-                text = {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        OutlinedTextField(
-                            value = titleInput,
-                            onValueChange = { titleInput = it },
-                            label = { Text("Judul Catatan") },
-                            placeholder = { Text("cth: Jetpack Compose State") },
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-
-                        OutlinedTextField(
-                            value = contentInput,
-                            onValueChange = { contentInput = it },
-                            label = { Text("Isi Catatan") },
-                            placeholder = { Text("Tulis apa saja yang kamu pelajari...") },
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            minLines = 4
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (titleInput.isNotBlank() && contentInput.isNotBlank()) {
-                                if (selectedNote == null) {
-                                    viewModel.createNote(titleInput, contentInput) {
-                                        showDialog = false
-                                    }
-                                } else {
-                                    viewModel.updateNote(selectedNote!!.id, titleInput, contentInput) {
-                                        showDialog = false
-                                    }
-                                }
-                            } else {
-                                Toast.makeText(context, "Judul dan isi catatan tidak boleh kosong", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue, contentColor = WhitePure)
-                    ) {
-                        Text("Simpan")
-                    }
-                },
-                dismissButton = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (selectedNote != null) {
-                            TextButton(
-                                onClick = {
-                                    viewModel.deleteNote(selectedNote!!.id) {
-                                        showDialog = false
-                                    }
-                                }
-                            ) {
-                                Text("Hapus", color = Color.Red)
-                            }
-                        }
-                        TextButton(onClick = { showDialog = false }) {
-                            Text("Batal")
-                        }
-                    }
-                },
-                shape = RoundedCornerShape(16.dp),
-                containerColor = WhitePure
-            )
-        }
     }
 }
 

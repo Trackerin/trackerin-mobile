@@ -70,7 +70,7 @@ class TokenManager(context: Context) {
     fun getRecentSearches(): List<String> {
         val raw = sharedPreferences.getString("recent_searches", null)
         if (raw == null) {
-            return listOf("Python Crash Course", "Agile Methodologies", "Figma Prototyping")
+            return emptyList()
         }
         return raw.split("|||").filter { it.isNotEmpty() }
     }

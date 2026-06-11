@@ -1,5 +1,6 @@
 package com.example.trackerinmobile.ui.screens.dashboard
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -217,27 +219,23 @@ fun DashboardScreen() {
 
 @Composable
 fun DashboardHeader(userName: String) {
+    val backStack = LocalBackStack.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Temporary Hardcoded Profile Picture (Placeholder)
-            Box(
+            // User Profile Picture instead of Initials
+            Image(
+                painter = painterResource(id = R.drawable.temporary_profile),
+                contentDescription = "Profile Picture",
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(PrimaryBlue),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = userName.take(1).uppercase(),
-                    color = WhitePure,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
-            }
+                    .border(1.dp, ComponentGray.copy(alpha = 0.3f), CircleShape),
+                contentScale = ContentScale.Crop
+            )
 
             Spacer(modifier = Modifier.width(12.dp))
 
@@ -254,10 +252,11 @@ fun DashboardHeader(userName: String) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(BlackishBlue),
+                    .background(BlackishBlue)
+                    .clickable { backStack.add(Routes.NotesRoute) },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(painter = painterResource(id = R.drawable.plus_icon), contentDescription = "Add", tint = WhitePure, modifier = Modifier.size(20.dp))
+                Icon(painter = painterResource(id = R.drawable.plus_icon), contentDescription = "Add Notes", tint = WhitePure, modifier = Modifier.size(20.dp))
             }
             Spacer(modifier = Modifier.width(8.dp))
             Box(
@@ -415,33 +414,62 @@ fun TasksWidget(
 
 @Composable
 fun TaskItem(todo: Todo, onToggleComplete: () -> Unit, onClick: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    val isCompleted = todo.isCompleted
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
+            .clickable { onClick() }
+            .padding(vertical = if (isCompleted) 4.dp else 8.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(20.dp)
-                .clip(CircleShape)
-                .border(2.dp, PrimaryBlue, CircleShape)
-                .background(if (todo.isCompleted) PrimaryBlue else Color.Transparent)
-                .clickable { onToggleComplete() },
-            contentAlignment = Alignment.Center
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            if (todo.isCompleted) {
-                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(WhitePure))
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, PrimaryBlue, CircleShape)
+                    .background(if (isCompleted) PrimaryBlue else Color.Transparent)
+                    .clickable { onToggleComplete() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (isCompleted) {
+                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(WhitePure))
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = todo.title,
+                fontSize = 14.sp,
+                color = if (isCompleted) TextGray else Black,
+                textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        if (!isCompleted) {
+            if (todo.description.isNotBlank() || todo.dueDate.isNotBlank()) {
+                Column(modifier = Modifier.padding(start = 32.dp, top = 4.dp)) {
+                    if (todo.description.isNotBlank()) {
+                        Text(
+                            text = todo.description,
+                            fontSize = 12.sp,
+                            color = TextGray,
+                            lineHeight = 16.sp
+                        )
+                    }
+                    if (todo.dueDate.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = todo.dueDate,
+                            fontSize = 11.sp,
+                            color = PrimaryBlue,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         }
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = todo.title,
-            fontSize = 14.sp,
-            color = if (todo.isCompleted) TextGray else Black,
-            textDecoration = if (todo.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-            modifier = Modifier.weight(1f).clickable { onClick() }
-        )
     }
 }
 

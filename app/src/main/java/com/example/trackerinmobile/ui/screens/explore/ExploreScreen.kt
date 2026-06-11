@@ -118,6 +118,9 @@ fun ExploreScreen() {
                     onClick = { 
                         if (searchQuery.isNotBlank()) {
                             hasSearchedTopic = searchQuery
+                            curriculumViewModel.tokenManager.saveRecentSearch(searchQuery)
+                            recentSearches.clear()
+                            recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
                         }
                     },
                     shape = RoundedCornerShape(8.dp),
@@ -236,24 +239,40 @@ fun ExploreScreen() {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 SuggestionChip(smartSuggestions[0]) {
-                    searchQuery = smartSuggestions[0].text
-                    hasSearchedTopic = smartSuggestions[0].text
+                    val topic = smartSuggestions[0].text
+                    searchQuery = topic
+                    hasSearchedTopic = topic
+                    curriculumViewModel.tokenManager.saveRecentSearch(topic)
+                    recentSearches.clear()
+                    recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
                 }
                 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
                     SuggestionChip(smartSuggestions[1]) {
-                        searchQuery = smartSuggestions[1].text
-                        hasSearchedTopic = smartSuggestions[1].text
+                        val topic = smartSuggestions[1].text
+                        searchQuery = topic
+                        hasSearchedTopic = topic
+                        curriculumViewModel.tokenManager.saveRecentSearch(topic)
+                        recentSearches.clear()
+                        recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
                     }
                     SuggestionChip(smartSuggestions[2]) {
-                        searchQuery = smartSuggestions[2].text
-                        hasSearchedTopic = smartSuggestions[2].text
+                        val topic = smartSuggestions[2].text
+                        searchQuery = topic
+                        hasSearchedTopic = topic
+                        curriculumViewModel.tokenManager.saveRecentSearch(topic)
+                        recentSearches.clear()
+                        recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
                     }
                 }
 
                 SuggestionChip(smartSuggestions[3]) {
-                    searchQuery = smartSuggestions[3].text
-                    hasSearchedTopic = smartSuggestions[3].text
+                    val topic = smartSuggestions[3].text
+                    searchQuery = topic
+                    hasSearchedTopic = topic
+                    curriculumViewModel.tokenManager.saveRecentSearch(topic)
+                    recentSearches.clear()
+                    recentSearches.addAll(curriculumViewModel.tokenManager.getRecentSearches())
                 }
             }
         }

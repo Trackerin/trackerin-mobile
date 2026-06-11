@@ -20,11 +20,15 @@ import retrofit2.HttpException
 import javax.inject.Inject
 
 import com.example.trackerinmobile.data.local.TokenManager
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+import com.example.trackerinmobile.core.NotificationHelper
 
 @HiltViewModel
 class CurriculumViewModel @Inject constructor(
     private val apiService: ApiService,
-    val tokenManager: TokenManager
+    val tokenManager: TokenManager,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     fun setQuizCompleted(milestoneId: Int, isCompleted: Boolean) {
@@ -102,6 +106,14 @@ class CurriculumViewModel @Inject constructor(
                     topic = response.data.topic,
                     totalProgress = response.data.totalProgress
                 )
+                
+                // Show real device notification for new roadmap
+                NotificationHelper.showLocalNotification(
+                    context = context,
+                    title = "Roadmap Baru Dibuat! 🗺️",
+                    message = "Roadmap baru untuk topik \"${response.data.topic}\" berhasil dibuat menggunakan AI!"
+                )
+                
                 onSuccess(response.data.id)
             } catch (e: Exception) {
                 _error.value = parseErrorBody(e)
@@ -148,6 +160,23 @@ class CurriculumViewModel @Inject constructor(
                         (completedCount.toDouble() / updatedMilestones.size.toDouble()) * 100.0
                     } else {
                         0.0
+                    }
+
+                    // Trigger real device notifications if completed
+                    if (isCompleted) {
+                        NotificationHelper.showLocalNotification(
+                            context = context,
+                            title = "Milestone Selesai! 🎉",
+                            message = "Selamat! Kamu telah menyelesaikan milestone \"${response.data.title}\" dalam kurikulum \"${currentDetail.topic}\"."
+                        )
+                        
+                        if (newProgress >= 100.0 && (currentDetail.totalProgress ?: 0.0) < 100.0) {
+                            NotificationHelper.showLocalNotification(
+                                context = context,
+                                title = "Roadmap Selesai! 🏆",
+                                message = "Luar biasa! Kamu telah menyelesaikan seluruh roadmap belajar \"${currentDetail.topic}\". Terus tingkatkan kemampuanmu!"
+                            )
+                        }
                     }
 
                     _curriculumDetail.value = currentDetail.copy(

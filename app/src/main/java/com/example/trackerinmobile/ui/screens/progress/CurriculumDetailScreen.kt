@@ -225,17 +225,19 @@ fun CurriculumDetailScreen(curriculumId: Int) {
                         }
                     } else {
                         itemsIndexed(curDetail.milestones) { index, milestone ->
+                            val isPrevCompleted = index == 0 || curDetail.milestones[index - 1].isCompleted
                             MilestoneTimelineItem(
                                 milestone = milestone,
                                 stepNumber = index + 1,
+                                isPrevCompleted = isPrevCompleted,
                                 isGeneratingQuiz = false,
                                 onToggleComplete = { isCompleted ->
                                     val milestones = curDetail.milestones
                                     val currentIndex = milestones.indexOfFirst { it.id == milestone.id }
                                     if (isCompleted) {
                                         // 1. Check if previous milestone is completed
-                                        val isPrevCompleted = currentIndex == 0 || milestones[currentIndex - 1].isCompleted
-                                        if (isPrevCompleted) {
+                                        val isPrevCompletedCheck = currentIndex == 0 || milestones[currentIndex - 1].isCompleted
+                                        if (isPrevCompletedCheck) {
                                             // 2. Check if user completed the quiz for this milestone
                                             if (viewModel.isQuizCompleted(milestone.id)) {
                                                 viewModel.toggleMilestoneComplete(milestone.id, true)
@@ -256,7 +258,11 @@ fun CurriculumDetailScreen(curriculumId: Int) {
                                     }
                                 },
                                 onTakeQuiz = {
-                                    backStack.add(Routes.QuizRoute(milestone.id))
+                                    if (isPrevCompleted) {
+                                        backStack.add(Routes.QuizRoute(milestone.id, milestone.isCompleted))
+                                    } else {
+                                        Toast.makeText(context, "Selesaikan milestone sebelumnya terlebih dahulu!", Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                             )
                             Spacer(modifier = Modifier.height(16.dp))
@@ -301,6 +307,7 @@ fun CurriculumDetailScreen(curriculumId: Int) {
 fun MilestoneTimelineItem(
     milestone: MilestoneApiModel,
     stepNumber: Int,
+    isPrevCompleted: Boolean,
     isGeneratingQuiz: Boolean,
     onToggleComplete: (Boolean) -> Unit,
     onTakeQuiz: () -> Unit
@@ -402,8 +409,8 @@ fun MilestoneTimelineItem(
                     .height(40.dp),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isCompleted) PrimaryBlue else Color(0xFFE2E8F0),
-                    contentColor = if (isCompleted) WhitePure else BlackishBlue
+                    containerColor = if (isCompleted) PrimaryBlue else if (isPrevCompleted) Color(0xFFE2E8F0) else Color(0xFFF1F5F9),
+                    contentColor = if (isCompleted) WhitePure else if (isPrevCompleted) BlackishBlue else TextGray.copy(alpha = 0.5f)
                 ),
                 enabled = !isGeneratingQuiz
             ) {

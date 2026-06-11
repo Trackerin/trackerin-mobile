@@ -39,7 +39,8 @@ object Routes {
 
     @Serializable
     data class QuizRoute(
-        val milestoneId: Int
+        val milestoneId: Int,
+        val isCompleted: Boolean = false
     ) : NavKey
 
     @Serializable

@@ -7,7 +7,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
@@ -28,7 +30,7 @@ import com.example.trackerinmobile.core.LocalBackStack
 import com.example.trackerinmobile.ui.theme.*
 
 @Composable
-fun QuizScreen(milestoneId: Int) {
+fun QuizScreen(milestoneId: Int, isMilestoneCompleted: Boolean) {
     val viewModel: CurriculumViewModel = hiltViewModel()
     val quizState by viewModel.quiz.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -40,7 +42,7 @@ fun QuizScreen(milestoneId: Int) {
     // Local Quiz State
     var currentQuestionIndex by remember { mutableStateOf(0) }
     val selectedAnswers = remember { mutableStateMapOf<Int, String>() }
-    var showResults by remember { mutableStateOf(false) }
+    var showResults by remember { mutableStateOf(isMilestoneCompleted || viewModel.isQuizCompleted(milestoneId)) }
     var apiError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(milestoneId) {
@@ -381,6 +383,7 @@ fun QuizScreen(milestoneId: Int) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
+                                    .verticalScroll(rememberScrollState())
                                     .padding(20.dp)
                             ) {
                                 Text(

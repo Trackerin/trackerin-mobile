@@ -63,7 +63,10 @@ fun ComposeApp() {
                         CurriculumDetailScreen(curriculumId = key.curriculumId)
                     }
                     entry<Routes.QuizRoute> { key ->
-                        QuizScreen(milestoneId = key.milestoneId)
+                        QuizScreen(
+                            milestoneId = key.milestoneId,
+                            isMilestoneCompleted = key.isCompleted
+                        )
                     }
                     entry<Routes.EditProfileRoute> { EditProfileScreen() }
                     entry<Routes.NoteDetailRoute> { key -> NoteDetailScreen(noteId = key.noteId) }

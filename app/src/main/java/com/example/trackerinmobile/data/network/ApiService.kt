@@ -7,6 +7,11 @@ import com.example.trackerinmobile.data.model.auth.RegisterRequest
 import com.example.trackerinmobile.data.model.auth.SendOtpRequest
 import com.example.trackerinmobile.data.model.auth.ResetPasswordRequest
 import com.example.trackerinmobile.data.model.auth.MessageResponse
+import com.example.trackerinmobile.data.model.auth.UserResponse
+import com.example.trackerinmobile.data.model.auth.AvatarUploadResponse
+import retrofit2.http.Multipart
+import retrofit2.http.Part
+import okhttp3.MultipartBody
 import com.example.trackerinmobile.data.model.progress.CurriculumsResponse
 import com.example.trackerinmobile.data.model.progress.SingleTodoResponse
 import com.example.trackerinmobile.data.model.progress.TodoRequest
@@ -47,6 +52,9 @@ interface ApiService {
     
     @POST("logout")
     suspend fun logout()
+
+    @GET("user")
+    suspend fun getUserProfile(): UserResponse
 
     @POST("forgot-password/send-otp")
     suspend fun sendForgotPasswordOtp(@Body request: SendOtpRequest): MessageResponse
@@ -112,4 +120,10 @@ interface ApiService {
 
     @PUT("notifications/{id}/read")
     suspend fun markNotificationAsRead(@Path("id") id: Int): NotificationItemResponse
+
+    @Multipart
+    @POST("user/avatar")
+    suspend fun uploadAvatar(
+        @Part profileImage: MultipartBody.Part
+    ): AvatarUploadResponse
 }

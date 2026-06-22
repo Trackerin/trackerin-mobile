@@ -284,7 +284,7 @@ fun LoginScreen() {
                             Log.e("AuthScreen", "Unexpected credential type: ${credential.type}")
                             Toast.makeText(context, "Unexpected credential type: ${credential.type}", Toast.LENGTH_SHORT).show()
                         }
-                    } catch (e: GetCredentialException) {
+                    } catch (e: Exception) {
                         Log.e("AuthScreen", "Google Sign In Error. Error Type: ${e::class.java.simpleName}", e)
                         val errorMessage = when (e) {
                             is androidx.credentials.exceptions.NoCredentialException -> "No Google accounts found on this device. Please sign in to Google in Settings."

@@ -38,21 +38,7 @@ class TokenManager(context: Context) {
         return sharedPreferences.getString(KEY_USER_NAME, null)
     }
 
-    fun saveOccupation(occupation: String) {
-        sharedPreferences.edit().putString(KEY_OCCUPATION, occupation).apply()
-    }
 
-    fun getOccupation(): String? {
-        return sharedPreferences.getString(KEY_OCCUPATION, null)
-    }
-
-    fun saveSpecialization(spec: String) {
-        sharedPreferences.edit().putString(KEY_SPECIALIZATION, spec).apply()
-    }
-
-    fun getSpecialization(): String? {
-        return sharedPreferences.getString(KEY_SPECIALIZATION, null)
-    }
 
     fun setQuizCompleted(milestoneId: Int, isCompleted: Boolean) {
         sharedPreferences.edit().putBoolean("quiz_completed_$milestoneId", isCompleted).apply()
@@ -94,6 +80,14 @@ class TokenManager(context: Context) {
         val lastActive = sharedPreferences.getString("last_active_date", null)
         val activeDates = sharedPreferences.getStringSet("active_dates", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
         
+        // Also ensure today's weekday activity is initialized to 0f instead of -1f
+        checkAndResetWeeklyActivity()
+        val dayOfWeekStr = getTodayWeekdayString()
+        val key = "activity_$dayOfWeekStr"
+        if (sharedPreferences.getFloat(key, -1f) < 0f) {
+            sharedPreferences.edit().putFloat(key, 0f).apply()
+        }
+
         if (!activeDates.contains(todayStr)) {
             activeDates.add(todayStr)
             sharedPreferences.edit().putStringSet("active_dates", activeDates).apply()
@@ -133,6 +127,10 @@ class TokenManager(context: Context) {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    fun saveCurrentStreak(streak: Int) {
+        sharedPreferences.edit().putInt("current_streak", streak).apply()
     }
 
     fun getCurrentStreak(): Int {
@@ -180,9 +178,23 @@ class TokenManager(context: Context) {
         }
     }
 
+    fun getTodayWeekdayString(): String {
+        val cal = Calendar.getInstance()
+        return when (cal.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> "MON"
+            Calendar.TUESDAY -> "TUE"
+            Calendar.WEDNESDAY -> "WED"
+            Calendar.THURSDAY -> "THU"
+            Calendar.FRIDAY -> "FRI"
+            Calendar.SATURDAY -> "SAT"
+            Calendar.SUNDAY -> "SUN"
+            else -> "MON"
+        }
+    }
+
     fun incrementDailyActivity(amount: Float = 20f) {
         checkAndResetWeeklyActivity()
-        val dayOfWeekStr = SimpleDateFormat("EEE", Locale.US).format(Date()).uppercase()
+        val dayOfWeekStr = getTodayWeekdayString()
         val key = "activity_$dayOfWeekStr"
         val current = sharedPreferences.getFloat(key, -1f)
         val base = if (current < 0f) 0f else current
@@ -194,21 +206,16 @@ class TokenManager(context: Context) {
         checkAndResetWeeklyActivity()
         
         // Find current day of the week
-        val currentDayStr = SimpleDateFormat("EEE", Locale.US).format(Date()).uppercase()
+        val currentDayStr = getTodayWeekdayString()
         val currentDayIndex = getDayIndex(currentDayStr)
         val targetDayIndex = getDayIndex(day)
         
-        // If it's a future day this week, it should have 0f activity
+        // If it's a future day this week, it should have -1f activity
         if (targetDayIndex > currentDayIndex) {
-            return 0f
+            return -1f
         }
         
-        val value = sharedPreferences.getFloat("activity_$day", -1f)
-        if (value >= 0f) {
-            return value
-        }
-        
-        return 0f
+        return sharedPreferences.getFloat("activity_$day", -1f)
     }
     fun saveEmail(email: String) {
         sharedPreferences.edit().putString(KEY_EMAIL, email).apply()
@@ -226,11 +233,19 @@ class TokenManager(context: Context) {
         return sharedPreferences.getString(KEY_PASSWORD, "password123")
     }
 
+    fun saveProfileImage(url: String?) {
+        sharedPreferences.edit().putString("profile_image_url", url).apply()
+    }
+
+    fun getProfileImage(): String? {
+        return sharedPreferences.getString("profile_image_url", null)
+    }
+
+
     companion object {
         private const val KEY_TOKEN = "jwt_token"
         private const val KEY_USER_NAME = "user_name"
-        private const val KEY_OCCUPATION = "user_occupation"
-        private const val KEY_SPECIALIZATION = "user_specialization"
+
         private const val KEY_EMAIL = "user_email"
         private const val KEY_PASSWORD = "user_password"
     }

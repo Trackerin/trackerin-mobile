@@ -49,8 +49,33 @@ data class User(
     @SerialName("created_at")
     val createdAt: String? = null,
     @SerialName("updated_at")
-    val updatedAt: String? = null
+    val updatedAt: String? = null,
+    @SerialName("last_login_at")
+    val lastLoginAt: String? = null,
+    @SerialName("total_study_time")
+    val totalStudyTime: Long? = null,
+    @SerialName("current_streak")
+    val currentStreak: Int? = null,
+    @SerialName("last_active_date")
+    val lastActiveDate: String? = null,
+    @SerialName("weekly_activity")
+    val weeklyActivity: Map<String, Float>? = null,
+    @SerialName("profile_image")
+    val profileImage: String? = null
 )
+
+@Serializable
+data class UserResponse(
+    val data: User
+)
+
+@Serializable
+data class AvatarUploadResponse(
+    val message: String? = null,
+    @SerialName("profile_image")
+    val profileImage: String
+)
+
 
 @Serializable
 data class SendOtpRequest(

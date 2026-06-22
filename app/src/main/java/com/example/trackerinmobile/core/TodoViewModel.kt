@@ -7,12 +7,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.UUID
+import java.time.Instant
+import java.time.Duration
 import com.example.trackerinmobile.data.network.ApiService
 import com.example.trackerinmobile.data.local.TokenManager
 import com.example.trackerinmobile.data.model.progress.TodoRequest
 import com.example.trackerinmobile.data.model.progress.TodoApiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import okhttp3.RequestBody
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
 
 data class Todo(
     val id: String = UUID.randomUUID().toString(),
@@ -45,6 +50,21 @@ class TodoViewModel @Inject constructor(
 
     private val _daysActive = MutableStateFlow(1)
     val daysActive: StateFlow<Int> = _daysActive.asStateFlow()
+
+    private val _weeklyActivity = MutableStateFlow<Map<String, Float>>(emptyMap())
+    val weeklyActivity: StateFlow<Map<String, Float>> = _weeklyActivity.asStateFlow()
+
+    private val _currentStreak = MutableStateFlow(1)
+    val currentStreak: StateFlow<Int> = _currentStreak.asStateFlow()
+
+    private val _profileImage = MutableStateFlow<String?>(tokenManager.getProfileImage())
+    val profileImage: StateFlow<String?> = _profileImage.asStateFlow()
+
+    private val _userName = MutableStateFlow(tokenManager.getUserName() ?: "User")
+    val userName: StateFlow<String> = _userName.asStateFlow()
+
+    private val _userEmail = MutableStateFlow(tokenManager.getEmail() ?: "")
+    val userEmail: StateFlow<String> = _userEmail.asStateFlow()
 
     private val _dailyAverage = MutableStateFlow(0.0)
     val dailyAverage: StateFlow<Double> = _dailyAverage.asStateFlow()
@@ -94,6 +114,29 @@ class TodoViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                // Fetch User profile to get dynamic stats
+                val userResponse = apiService.getUserProfile()
+                val user = userResponse.data
+
+                // Cache user data locally
+                tokenManager.saveUserName(user.name)
+                tokenManager.saveEmail(user.email)
+                tokenManager.saveProfileImage(user.profileImage)
+
+                _userName.value = user.name
+                _userEmail.value = user.email
+                _profileImage.value = user.profileImage
+
+                // Update SharedPreferences streak value
+                user.currentStreak?.let {
+                    tokenManager.saveCurrentStreak(it)
+                }
+
+                // Update dynamic statistics and activity map
+                _currentStreak.value = user.currentStreak ?: 1
+                val weeklyActivityMap = user.weeklyActivity ?: emptyMap()
+                _weeklyActivity.value = weeklyActivityMap
+
                 // Fetch Curriculums
                 val curriculumsResponse = apiService.getCurriculums()
                 val curriculums = curriculumsResponse.data ?: emptyList()
@@ -126,41 +169,47 @@ class TodoViewModel @Inject constructor(
                 val parsedTodos = todosResponse.data?.map { parseTodo(it) } ?: emptyList()
                 _todos.value = parsedTodos
 
-                val completedTasks = parsedTodos.count { it.isCompleted }
+                // Calculate dynamic elapsed session seconds
+                val elapsedSeconds = parseLastLoginAt(user.lastLoginAt)
+                val totalSeconds = (user.totalStudyTime ?: 0L) + elapsedSeconds
+                val hours = totalSeconds / 3600.0
 
-                // Track active days and streak
-                tokenManager.updateStreakAndActiveDays()
-
-                val activeDays = tokenManager.getActiveDaysCount()
-                val hours = (estimatedCompletedMilestones * 2.0) + (completedTasks * 0.5)
-                val average = if (activeDays > 0) hours / activeDays else hours
+                // Calculate days active from the weekly activity log
+                val activeDaysInWeek = weeklyActivityMap.filter { it.key != "year" && it.key != "week" && it.value >= 0f }.size
+                val daysActiveValue = if (activeDaysInWeek > 0) activeDaysInWeek else 1
+                val average = if (daysActiveValue > 0) hours / daysActiveValue else hours
                 val completedCount = curriculums.count { (it.totalProgress ?: 0.0) >= 100.0 }
 
                 // Monthly values (overall stats)
                 monthlyHours = hours
                 monthlyTopics = estimatedCompletedMilestones
-                monthlyDays = activeDays
-                monthlyAverage = average
+                monthlyDays = tokenManager.getActiveDaysCount()
+                monthlyAverage = if (monthlyDays > 0) hours / monthlyDays else hours
 
-                // Weekly values (computed dynamically from the recorded daily weekday activities)
+                // Weekly values (computed dynamically from the server weekly activity map)
                 val weekdays = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
                 var wHours = 0.0
-                var wDays = 0
                 var wTopics = 0
                 for (day in weekdays) {
-                    val act = tokenManager.getDailyActivity(day)
+                    val act = weeklyActivityMap[day] ?: -1f
                     if (act >= 0f) {
-                        wDays++
                         wHours += act * 0.05
                         if (act >= 40f) {
                             wTopics += (act / 40f).toInt()
                         }
                     }
                 }
+                // Add current session hours to today's weekday activity hours
+                val todayStr = tokenManager.getTodayWeekdayString()
+                val todayActivity = weeklyActivityMap[todayStr] ?: -1f
+                if (todayActivity >= 0f && elapsedSeconds > 0L) {
+                    wHours += elapsedSeconds / 3600.0
+                }
+
                 weeklyHours = wHours
-                weeklyDays = wDays
+                weeklyDays = daysActiveValue
                 weeklyTopics = wTopics
-                weeklyAverage = if (wDays > 0) wHours / wDays else 0.0
+                weeklyAverage = if (daysActiveValue > 0) wHours / daysActiveValue else 0.0
 
                 _completedRoadmapsCount.value = completedCount
                 updateDisplayStats()
@@ -169,6 +218,28 @@ class TodoViewModel @Inject constructor(
                 e.printStackTrace()
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    private fun parseLastLoginAt(lastLoginAt: String?): Long {
+        if (lastLoginAt.isNullOrEmpty()) return 0L
+        return try {
+            val instant = Instant.parse(lastLoginAt)
+            val diff = Duration.between(instant, Instant.now()).seconds
+            if (diff > 0L) diff else 0L
+        } catch (e: Exception) {
+            try {
+                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US)
+                val date = sdf.parse(lastLoginAt)
+                if (date != null) {
+                    val diff = (System.currentTimeMillis() - date.time) / 1000L
+                    if (diff > 0L) diff else 0L
+                } else {
+                    0L
+                }
+            } catch (ex: Exception) {
+                0L
             }
         }
     }
@@ -259,6 +330,40 @@ class TodoViewModel @Inject constructor(
                 apiService.deleteTodo(id.toInt())
             } catch (e: Exception) {
                 loadData()
+            }
+        }
+    }
+
+    fun uploadProfileImage(uri: android.net.Uri, context: android.content.Context) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val contentResolver = context.contentResolver
+                val inputStream = contentResolver.openInputStream(uri) ?: return@launch
+                val tempFile = java.io.File.createTempFile("avatar_", ".jpg", context.cacheDir)
+                tempFile.deleteOnExit()
+                tempFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+
+                val requestFile = RequestBody.create(
+                    "image/*".toMediaTypeOrNull(),
+                    tempFile
+                )
+                val body = MultipartBody.Part.createFormData("profile_image", tempFile.name, requestFile)
+
+                val response = apiService.uploadAvatar(body)
+                
+                // Cache new image URL
+                tokenManager.saveProfileImage(response.profileImage)
+                _profileImage.value = response.profileImage
+                
+                // Refresh data to keep stats/details updated
+                loadData()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isLoading.value = false
             }
         }
     }

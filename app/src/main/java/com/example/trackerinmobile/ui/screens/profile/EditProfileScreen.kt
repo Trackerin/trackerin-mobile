@@ -34,24 +34,39 @@ import com.example.trackerinmobile.core.LocalBackStack
 import com.example.trackerinmobile.ui.screens.auth.AuthViewModel
 import com.example.trackerinmobile.ui.theme.*
 import java.util.Locale
+import com.example.trackerinmobile.core.TodoViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen() {
     val authViewModel: AuthViewModel = hiltViewModel()
+    val viewModel: TodoViewModel = hiltViewModel()
     val tokenManager = authViewModel.tokenManager
     val backStack = LocalBackStack.current
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    // Load initial values from TokenManager
-    val initialName = remember { tokenManager.getUserName() ?: "" }
-    val initialOccupation = remember { tokenManager.getOccupation() ?: "" }
-    val initialSpecialization = remember { tokenManager.getSpecialization() ?: "" }
+    // Load initial values from TodoViewModel
+    val initialName by viewModel.userName.collectAsState()
+    val profileImage by viewModel.profileImage.collectAsState()
 
-    var name by remember { mutableStateOf(initialName) }
-    var occupation by remember { mutableStateOf(initialOccupation) }
-    var specialization by remember { mutableStateOf(initialSpecialization) }
+    var name by remember { mutableStateOf("") }
+    LaunchedEffect(initialName) {
+        name = initialName
+    }
+
+    val pickMedia = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.uploadProfileImage(uri, context)
+        }
+    }
 
     Scaffold(
         containerColor = BackgroundApp
@@ -96,26 +111,45 @@ fun EditProfileScreen() {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Profile Image (Initials circle matching other screens)
+            // Profile Image (Initials circle or Avatar AsyncImage)
             val firstLetter = initialName.trim().firstOrNull()?.toString()?.uppercase(Locale.getDefault()) ?: "U"
+            val imageUrl = profileImage
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(PrimaryBlue.copy(alpha = 0.1f))
-                        .border(3.dp, PrimaryBlue, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = firstLetter,
-                        fontSize = 48.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryBlue
+                if (!imageUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .border(3.dp, PrimaryBlue, CircleShape)
+                            .clickable { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                        contentScale = ContentScale.Crop,
+                        error = painterResource(id = R.drawable.profile_icon)
                     )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .background(PrimaryBlue.copy(alpha = 0.1f))
+                            .border(3.dp, PrimaryBlue, CircleShape)
+                            .clickable { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = firstLetter,
+                            fontSize = 48.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryBlue
+                        )
+                    }
                 }
             }
 
@@ -147,35 +181,7 @@ fun EditProfileScreen() {
                         )
                     )
 
-                    // Occupation Field
-                    OutlinedTextField(
-                        value = occupation,
-                        onValueChange = { occupation = it },
-                        label = { Text("Occupation") },
-                        placeholder = { Text("Enter your occupation") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = ComponentGray.copy(alpha = 0.5f)
-                        )
-                    )
 
-                    // Specialization Field
-                    OutlinedTextField(
-                        value = specialization,
-                        onValueChange = { specialization = it },
-                        label = { Text("Specialization") },
-                        placeholder = { Text("Enter your specialization") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = ComponentGray.copy(alpha = 0.5f)
-                        )
-                    )
                 }
             }
 
@@ -187,8 +193,6 @@ fun EditProfileScreen() {
                     if (name.isNotBlank()) {
                         // Persist all data locally to SharedPreferences
                         tokenManager.saveUserName(name.trim())
-                        tokenManager.saveOccupation(occupation.trim())
-                        tokenManager.saveSpecialization(specialization.trim())
 
                         Toast.makeText(context, "Changes saved successfully!", Toast.LENGTH_SHORT).show()
                         backStack.removeLastOrNull()

@@ -34,6 +34,11 @@ import java.util.Locale
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import com.example.trackerinmobile.ui.screens.auth.AuthState
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 @Composable
 fun ProfileScreen() {
@@ -51,12 +56,19 @@ fun ProfileScreen() {
 
     val completedRoadmapsCount by viewModel.completedRoadmapsCount.collectAsState()
     val totalHours by viewModel.totalHours.collectAsState()
-    val currentStreak = remember { authViewModel.tokenManager.getCurrentStreak() }
+    val currentStreak by viewModel.currentStreak.collectAsState()
 
     // Profile Data State
-    val name = authViewModel.tokenManager.getUserName() ?: "User"
-    val occupation = authViewModel.tokenManager.getOccupation() ?: "Status/Pendidikan belum diatur"
-    val specialization = authViewModel.tokenManager.getSpecialization() ?: "Bidang minat belum diatur"
+    val name by viewModel.userName.collectAsState()
+    val profileImage by viewModel.profileImage.collectAsState()
+
+    val pickMedia = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.uploadProfileImage(uri, context)
+        }
+    }
     
     var showContactDialog by remember { mutableStateOf(false) }
 
@@ -106,30 +118,48 @@ fun ProfileScreen() {
             )
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Profile Initials Circle
+            // Profile Initials or Avatar Image Circle
             val firstLetter = name.trim().firstOrNull()?.toString()?.uppercase(Locale.getDefault()) ?: "U"
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(PrimaryBlue.copy(alpha = 0.1f))
-                    .border(2.dp, PrimaryBlue, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = firstLetter,
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryBlue
+            val imageUrl = profileImage
+            if (!imageUrl.isNullOrEmpty()) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(imageUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Profile Picture",
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, PrimaryBlue, CircleShape)
+                        .clickable { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    contentScale = ContentScale.Crop,
+                    error = painterResource(id = R.drawable.profile_icon)
                 )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(PrimaryBlue.copy(alpha = 0.1f))
+                        .border(2.dp, PrimaryBlue, CircleShape)
+                        .clickable { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = firstLetter,
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryBlue
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // Name & Info
             Text(text = name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Black)
-            Text(text = occupation, fontSize = 14.sp, color = TextGray)
-            Text(text = specialization, fontSize = 14.sp, color = TextGray)
+
 
             Spacer(modifier = Modifier.height(20.dp))
 

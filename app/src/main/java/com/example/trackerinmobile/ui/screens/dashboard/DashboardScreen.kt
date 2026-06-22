@@ -60,6 +60,7 @@ fun DashboardScreen() {
     val daysActive by viewModel.daysActive.collectAsState()
     val dailyAverage by viewModel.dailyAverage.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
+    val weeklyActivity by viewModel.weeklyActivity.collectAsState()
 
     val backStack = LocalBackStack.current
 
@@ -148,7 +149,7 @@ fun DashboardScreen() {
                 onFilterSelected = { filter -> viewModel.setFilter(filter) }
             )
             Spacer(modifier = Modifier.height(16.dp))
-            WeeklyProgressChartWidget(tokenManager = viewModel.tokenManager)
+            WeeklyProgressChartWidget(weeklyActivity = weeklyActivity)
             Spacer(modifier = Modifier.height(32.dp))
         }
 
@@ -605,7 +606,7 @@ fun ProgressOverviewWidget(
 }
 
 @Composable
-fun WeeklyProgressChartWidget(tokenManager: TokenManager) {
+fun WeeklyProgressChartWidget(weeklyActivity: Map<String, Float>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -622,14 +623,14 @@ fun WeeklyProgressChartWidget(tokenManager: TokenManager) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Get actual values from TokenManager
-        val monVal = tokenManager.getDailyActivity("MON").coerceAtLeast(0f)
-        val tueVal = tokenManager.getDailyActivity("TUE").coerceAtLeast(0f)
-        val wedVal = tokenManager.getDailyActivity("WED").coerceAtLeast(0f)
-        val thuVal = tokenManager.getDailyActivity("THU").coerceAtLeast(0f)
-        val friVal = tokenManager.getDailyActivity("FRI").coerceAtLeast(0f)
-        val satVal = tokenManager.getDailyActivity("SAT").coerceAtLeast(0f)
-        val sunVal = tokenManager.getDailyActivity("SUN").coerceAtLeast(0f)
+        // Get actual values from weeklyActivity map
+        val monVal = weeklyActivity["MON"]?.coerceAtLeast(0f) ?: 0f
+        val tueVal = weeklyActivity["TUE"]?.coerceAtLeast(0f) ?: 0f
+        val wedVal = weeklyActivity["WED"]?.coerceAtLeast(0f) ?: 0f
+        val thuVal = weeklyActivity["THU"]?.coerceAtLeast(0f) ?: 0f
+        val friVal = weeklyActivity["FRI"]?.coerceAtLeast(0f) ?: 0f
+        val satVal = weeklyActivity["SAT"]?.coerceAtLeast(0f) ?: 0f
+        val sunVal = weeklyActivity["SUN"]?.coerceAtLeast(0f) ?: 0f
 
         // Find current day of the week to highlight it
         val currentDay = SimpleDateFormat("EEE", Locale.US).format(Date()).uppercase()
